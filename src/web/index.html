@@ -1,0 +1,857 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>schemaSkill — Schema Markup Aracı</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #1a1a2e;
+      --sidebar: #16213e;
+      --card: #0f3460;
+      --card2: #112244;
+      --accent: #e94560;
+      --accent2: #f5a623;
+      --text: #e0e6f0;
+      --text-muted: #8899b0;
+      --border: #1e3a5f;
+      --success: #2ecc71;
+      --error: #e74c3c;
+      --warning: #f39c12;
+      --info: #3498db;
+      --radius: 10px;
+      --sidebar-width: 230px;
+      --font: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--font); font-size: 15px; line-height: 1.6; min-height: 100vh; }
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { text-decoration: underline; }
+
+    /* Layout */
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: var(--sidebar-width); background: var(--sidebar); border-right: 1px solid var(--border); position: fixed; top: 0; left: 0; bottom: 0; overflow-y: auto; z-index: 10; }
+    .main { flex: 1; margin-left: var(--sidebar-width); padding: 32px 40px 60px; max-width: 1100px; }
+
+    /* Header */
+    .header { display: flex; align-items: center; gap: 12px; padding: 20px 18px; border-bottom: 1px solid var(--border); }
+    .header-logo { width: 36px; height: 36px; border-radius: 8px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 18px; color: #fff; flex-shrink: 0; }
+    .header-text strong { display: block; font-size: 15px; }
+    .header-text small { font-size: 11px; color: var(--text-muted); }
+    .header-version { margin-left: auto; font-size: 11px; background: var(--card); padding: 3px 8px; border-radius: 20px; color: var(--text-muted); }
+
+    /* Nav */
+    .nav { padding: 16px 0; }
+    .nav-group { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--text-muted); padding: 12px 20px 6px; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 9px 20px; cursor: pointer; transition: background .15s, color .15s; color: var(--text-muted); font-size: 14px; }
+    .nav-item:hover { background: rgba(233,69,96,.1); color: var(--text); }
+    .nav-item.active { background: rgba(233,69,96,.18); color: var(--accent); border-right: 3px solid var(--accent); }
+    .nav-icon { width: 18px; text-align: center; font-size: 15px; }
+
+    /* Sections */
+    .section { display: none; }
+    .section.active { display: block; }
+    .section-title { font-size: 24px; font-weight: 700; margin-bottom: 6px; }
+    .section-subtitle { color: var(--text-muted); margin-bottom: 28px; font-size: 14px; }
+
+    /* Cards */
+    .card { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 22px; margin-bottom: 20px; }
+    .card-title { font-size: 16px; font-weight: 600; margin-bottom: 12px; display: flex; align-items: center; gap: 8px; }
+    .card-title .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+    /* Stats */
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px; margin-bottom: 28px; }
+    .stat { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 18px; text-align: center; }
+    .stat-value { font-size: 28px; font-weight: 700; color: var(--accent); }
+    .stat-label { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+
+    /* Badges */
+    .badge { display: inline-block; padding: 2px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .badge-success { background: rgba(46,204,113,.15); color: var(--success); }
+    .badge-error { background: rgba(231,76,60,.15); color: var(--error); }
+    .badge-warning { background: rgba(243,156,18,.15); color: var(--warning); }
+    .badge-info { background: rgba(52,152,219,.15); color: var(--info); }
+    .badge-muted { background: rgba(136,153,176,.15); color: var(--text-muted); }
+
+    /* Chips */
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+    .chip { background: var(--card2); border: 1px solid var(--border); padding: 5px 14px; border-radius: 20px; font-size: 13px; color: var(--text-muted); }
+
+    /* Buttons */
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 22px; border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; transition: all .15s; font-family: var(--font); }
+    .btn-accent { background: var(--accent); color: #fff; }
+    .btn-accent:hover { background: #d63650; }
+    .btn-accent:disabled { opacity: .5; cursor: not-allowed; }
+    .btn-secondary { background: var(--card); border: 1px solid var(--border); color: var(--text); }
+    .btn-secondary:hover { background: var(--card2); }
+    .btn-small { padding: 5px 14px; font-size: 12px; }
+    .btn-group { display: flex; gap: 10px; flex-wrap: wrap; }
+
+    /* Form */
+    .form-group { margin-bottom: 18px; }
+    .form-label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+    .form-input, .form-select, .form-textarea { width: 100%; padding: 10px 14px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--bg); color: var(--text); font-size: 14px; font-family: var(--font); outline: none; transition: border-color .15s; }
+    .form-input:focus, .form-select:focus, .form-textarea:focus { border-color: var(--accent); }
+    .form-textarea { resize: vertical; min-height: 120px; }
+
+    /* Steps (pipeline cards) */
+    .step { background: var(--card2); border: 1px solid var(--border); border-radius: var(--radius); margin-bottom: 12px; overflow: hidden; }
+    .step-header { padding: 14px 18px; cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background .15s; }
+    .step-header:hover { background: rgba(255,255,255,.03); }
+    .step-num { width: 28px; height: 28px; border-radius: 50%; background: var(--accent); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+    .step-title { font-weight: 600; font-size: 14px; }
+    .step-desc { font-size: 12px; color: var(--text-muted); margin-left: auto; }
+    .step-arrow { margin-left: 8px; transition: transform .2s; color: var(--text-muted); }
+    .step.open .step-arrow { transform: rotate(90deg); }
+    .step-body { padding: 0 18px 16px; display: none; }
+    .step.open .step-body { display: block; }
+
+    /* Code */
+    .code-block { background: #0a0e1a; border: 1px solid var(--border); border-radius: 8px; padding: 16px; overflow-x: auto; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace; font-size: 13px; line-height: 1.5; position: relative; }
+    .code-block .copy-btn { position: absolute; top: 8px; right: 8px; }
+    .json-key { color: #82aaff; }
+    .json-string { color: #c3e88d; }
+    .json-number { color: #f78c6c; }
+    .json-bool { color: #c792ea; }
+    .json-null { color: #546e7a; }
+
+    /* Confidence bar */
+    .confidence-bar { height: 8px; border-radius: 4px; background: var(--bg); overflow: hidden; margin-top: 6px; }
+    .confidence-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+
+    /* Validation */
+    .validation-ok { color: var(--success); font-weight: 600; }
+    .validation-fail { color: var(--error); font-weight: 600; }
+    .issue-item { padding: 8px 0; border-bottom: 1px solid rgba(255,255,255,.05); display: flex; gap: 10px; align-items: flex-start; }
+    .issue-item:last-child { border-bottom: none; }
+    .issue-icon { flex-shrink: 0; font-size: 14px; margin-top: 2px; }
+
+    /* Table */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 14px; background: var(--card2); color: var(--text-muted); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+    td { padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,.05); }
+    tr:hover td { background: rgba(255,255,255,.02); }
+    tr.audit-detail-row { display: none; }
+    tr.audit-detail-row td { padding: 16px 20px; background: var(--card2); }
+    .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .detail-section-title { font-size: 12px; font-weight: 700; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 8px; }
+
+    /* Loading */
+    .loading { display: none; text-align: center; padding: 40px; }
+    .spinner { width: 40px; height: 40px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 16px; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* Toast */
+    .toast-container { position: fixed; top: 20px; right: 20px; z-index: 1000; display: flex; flex-direction: column; gap: 8px; }
+    .toast { padding: 12px 20px; border-radius: var(--radius); color: #fff; font-size: 14px; font-weight: 500; animation: slideIn .3s; max-width: 400px; }
+    .toast-success { background: var(--success); }
+    .toast-error { background: var(--error); }
+    @keyframes slideIn { from { transform: translateX(100%); opacity: 0; } to { transform: translateX(0); opacity: 1; } }
+
+    /* Workflow */
+    .flow { display: flex; flex-direction: column; gap: 0; align-items: center; }
+    .flow-box { background: var(--card); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 24px; text-align: center; min-width: 260px; }
+    .flow-box-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+    .flow-box-desc { font-size: 12px; color: var(--text-muted); }
+    .flow-arrow { color: var(--accent); font-size: 22px; padding: 4px 0; }
+    .flow-parallel { display: flex; gap: 16px; align-items: center; }
+    .flow-parallel .flow-box { flex: 1; }
+    .flow-label { font-size: 20px; font-weight: 700; margin: 24px 0 12px; color: var(--accent); }
+
+    /* Docs */
+    .docs h2 { font-size: 20px; margin: 32px 0 12px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+    .docs h3 { font-size: 16px; margin: 20px 0 8px; color: var(--accent2); }
+    .docs p { margin-bottom: 12px; color: var(--text-muted); }
+    .docs ul { margin: 8px 0 12px 20px; color: var(--text-muted); }
+    .docs li { margin-bottom: 4px; }
+    .docs pre { background: #0a0e1a; border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin: 8px 0 16px; overflow-x: auto; font-size: 13px; }
+    .docs code { font-family: 'SF Mono', 'Fira Code', monospace; }
+    .docs table { margin: 8px 0 16px; }
+    .docs th, .docs td { padding: 8px 12px; text-align: left; }
+  </style>
+</head>
+<body>
+  <div class="toast-container" id="toast-container"></div>
+
+  <div class="app">
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="header">
+        <div class="header-logo">S</div>
+        <div class="header-text">
+          <strong>schemaSkill</strong>
+          <small>Schema Markup Otomatik Üretim Aracı</small>
+        </div>
+        <span class="header-version">v1.0.0</span>
+      </div>
+      <nav class="nav">
+        <div class="nav-group">Navigasyon</div>
+        <div class="nav-item active" data-section="overview">
+          <span class="nav-icon">&#x229E;</span> Genel Bakış
+        </div>
+        <div class="nav-item" data-section="generate">
+          <span class="nav-icon">&#x26A1;</span> Schema Üret
+        </div>
+        <div class="nav-item" data-section="audit">
+          <span class="nav-icon">&#x1F50D;</span> Toplu Denetim
+        </div>
+        <div class="nav-group">Kaynaklar</div>
+        <div class="nav-item" data-section="docs">
+          <span class="nav-icon">&#x1F4D6;</span> Dokümantasyon
+        </div>
+        <div class="nav-item" data-section="workflow">
+          <span class="nav-icon">&#x21BB;</span> İş Akışı
+        </div>
+      </nav>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="main">
+
+      <!-- Overview -->
+      <div class="section active" id="sec-overview">
+        <div class="section-title">Genel Bakış</div>
+        <div class="section-subtitle">schemaSkill — Schema.org yapılandırılmış veri otomasyonu</div>
+
+        <div class="stats">
+          <div class="stat"><div class="stat-value" id="stat-generated">0</div><div class="stat-label">Üretilen Schema</div></div>
+          <div class="stat"><div class="stat-value" id="stat-audited">0</div><div class="stat-label">Denetlenen URL</div></div>
+          <div class="stat"><div class="stat-value" id="stat-validation">—</div><div class="stat-label">Son Doğrulama</div></div>
+          <div class="stat"><div class="stat-value" id="stat-score">—</div><div class="stat-label">Ort. Denetim Puanı</div></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Ne Yapar?</div>
+          <p style="color:var(--text-muted); margin-bottom:14px;">
+            schemaSkill, verilen bir URL'yi Playwright ile tarar, sayfa içeriğini analiz eder ve Azure OpenAI kullanarak
+            <strong style="color:var(--text);">Schema.org JSON-LD yapılandırılmış verisi</strong> üretir.
+            Üretilen şema doğrulanır ve Google'ın zengin sonuç gereksinimlerine göre değerlendirilir.
+            Toplu denetim modu ile birden fazla sayfayı aynı anda analiz edebilir ve raporlar oluşturabilirsiniz.
+          </p>
+          <div class="btn-group">
+            <button class="btn btn-accent" onclick="navigate('generate')">&#x26A1; Schema Üret</button>
+            <button class="btn btn-secondary" onclick="navigate('audit')">&#x1F50D; Toplu Denetim</button>
+            <button class="btn btn-secondary" onclick="navigate('docs')">&#x1F4D6; Dokümantasyon</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-title"><span class="dot"></span> Desteklenen Schema Tipleri</div>
+          <div class="chips" style="margin-top:8px;">
+            <span class="chip">Article</span><span class="chip">Product</span><span class="chip">FAQPage</span>
+            <span class="chip">LocalBusiness</span><span class="chip">Organization</span><span class="chip">WebSite</span>
+            <span class="chip">Recipe</span><span class="chip">Event</span><span class="chip">JobPosting</span>
+            <span class="chip">Course</span><span class="chip">HowTo</span><span class="chip">Review</span>
+            <span class="chip">VideoObject</span><span class="chip">WebPage</span><span class="chip">NewsArticle</span>
+            <span class="chip">BreadcrumbList</span><span class="chip">Person</span><span class="chip">Restaurant</span>
+            <span class="chip">Book</span><span class="chip">SoftwareApplication</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Generate -->
+      <div class="section" id="sec-generate">
+        <div class="section-title">Schema Üret</div>
+        <div class="section-subtitle">Bir URL girin, AI ile JSON-LD yapılandırılmış veri üretin</div>
+
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">URL</label>
+            <input class="form-input" id="gen-url" type="url" placeholder="https://example.com/page" />
+          </div>
+          <div class="form-group">
+            <label class="form-label">Schema Tipi (opsiyonel — boş bırakırsanız otomatik algılanır)</label>
+            <select class="form-select" id="gen-type">
+              <option value="">Otomatik Algıla</option>
+              <option>Article</option><option>Product</option><option>FAQPage</option>
+              <option>LocalBusiness</option><option>Organization</option><option>WebSite</option>
+              <option>WebPage</option><option>Recipe</option><option>Event</option>
+              <option>JobPosting</option><option>Course</option><option>HowTo</option>
+              <option>Review</option><option>VideoObject</option><option>NewsArticle</option>
+              <option>BreadcrumbList</option><option>Person</option><option>Restaurant</option>
+              <option>Book</option><option>SoftwareApplication</option>
+            </select>
+          </div>
+          <button class="btn btn-accent" id="gen-btn" onclick="runGenerate()">&#x26A1; Üret</button>
+        </div>
+
+        <div class="loading" id="gen-loading">
+          <div class="spinner"></div>
+          <div style="color:var(--text-muted);">Sayfa taranıyor, tip algılanıyor, schema üretiliyor...</div>
+        </div>
+
+        <div id="gen-results" style="display:none;"></div>
+      </div>
+
+      <!-- Audit -->
+      <div class="section" id="sec-audit">
+        <div class="section-title">Toplu Denetim</div>
+        <div class="section-subtitle">Birden fazla URL'yi analiz edin, rapor oluşturun</div>
+
+        <div class="card">
+          <div class="form-group">
+            <label class="form-label">URL Listesi (her satıra bir URL)</label>
+            <textarea class="form-textarea" id="audit-urls" placeholder="https://example.com&#10;https://example.com/blog/post&#10;https://example.com/products/item"></textarea>
+          </div>
+          <div class="btn-group">
+            <button class="btn btn-accent" id="audit-btn" onclick="runAudit()">&#x1F50D; Denetle</button>
+          </div>
+        </div>
+
+        <div class="loading" id="audit-loading">
+          <div class="spinner"></div>
+          <div style="color:var(--text-muted);">URL'ler taranıyor ve denetleniyor...</div>
+        </div>
+
+        <div id="audit-results" style="display:none;">
+          <div class="stats" id="audit-stats"></div>
+          <div class="card" style="padding:0; overflow:hidden;">
+            <div class="table-wrap">
+              <table>
+                <thead>
+                  <tr><th>URL</th><th>Sayfa Tipi</th><th>Puan</th><th>Öncelik</th><th>Sorunlar</th><th>Schema</th></tr>
+                </thead>
+                <tbody id="audit-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="btn-group" style="margin-top:14px;">
+            <button class="btn btn-secondary btn-small" onclick="downloadMarkdown()">&#x1F4C4; Markdown Rapor İndir</button>
+            <button class="btn btn-secondary btn-small" onclick="downloadCsv()">&#x1F4CA; CSV Özet İndir</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Docs -->
+      <div class="section docs" id="sec-docs">
+        <div class="section-title">Dokümantasyon</div>
+        <div class="section-subtitle">Kurulum, kullanım ve API referansı</div>
+
+        <h2>Kurulum</h2>
+        <pre><code>git clone &lt;repo-url&gt; &amp;&amp; cd schemaSkill
+npm install
+cp .env.example .env
+# .env dosyasını Azure OpenAI bilgilerinizle düzenleyin
+npx playwright install chromium</code></pre>
+
+        <h2>.env Yapılandırması</h2>
+        <table>
+          <thead><tr><th>Değişken</th><th>Açıklama</th><th>Varsayılan</th></tr></thead>
+          <tbody>
+            <tr><td><code>AZURE_OPENAI_ENDPOINT</code></td><td>Azure OpenAI resource URL</td><td>—</td></tr>
+            <tr><td><code>AZURE_OPENAI_API_KEY</code></td><td>API anahtarı</td><td>—</td></tr>
+            <tr><td><code>AZURE_OPENAI_DEPLOYMENT</code></td><td>Model deployment adı</td><td>gpt-4o</td></tr>
+            <tr><td><code>AZURE_OPENAI_API_VERSION</code></td><td>API versiyonu</td><td>2024-10-21</td></tr>
+          </tbody>
+        </table>
+
+        <h2>CLI Kullanımı</h2>
+        <h3>Tekil Schema Üretimi</h3>
+        <pre><code>npx tsx bin/schemaSkill.ts generate &lt;url&gt; [--type &lt;type&gt;] [--output &lt;file&gt;]
+
+# Örnekler:
+npx tsx bin/schemaSkill.ts generate https://example.com/blog/post
+npx tsx bin/schemaSkill.ts generate https://example.com/product --type Product --output schema.json</code></pre>
+
+        <h3>Toplu Denetim</h3>
+        <pre><code>npx tsx bin/schemaSkill.ts audit &lt;input.csv&gt; [--output-dir &lt;dir&gt;] [--concurrency &lt;n&gt;]
+
+# Örnek:
+npx tsx bin/schemaSkill.ts audit urls.csv --output-dir ./reports --concurrency 2</code></pre>
+
+        <h3>Web Arayüzü</h3>
+        <pre><code>npm run web
+# Tarayıcıda http://localhost:3456 açın</code></pre>
+
+        <h2>CSV Giriş Formatı</h2>
+        <table>
+          <thead><tr><th>Sütun</th><th>Zorunlu</th><th>Açıklama</th></tr></thead>
+          <tbody>
+            <tr><td><code>url</code></td><td>Evet</td><td>Denetlenecek sayfa URL'si</td></tr>
+            <tr><td><code>page_type</code></td><td>Hayır</td><td>Schema.org tip ipucu (ör. Article, Product)</td></tr>
+            <tr><td><code>priority</code></td><td>Hayır</td><td>Öncelik seviyesi (high, medium, low)</td></tr>
+            <tr><td><code>notes</code></td><td>Hayır</td><td>Notlar</td></tr>
+          </tbody>
+        </table>
+
+        <h2>Desteklenen Schema Tipleri</h2>
+        <p>Araç, schema.org vocabulary dosyasını dinamik olarak indirip 800+ tipi destekler. Özellikle optimize edilmiş tipler:</p>
+        <ul>
+          <li><strong>Article / NewsArticle / BlogPosting</strong> — Blog yazıları, haberler</li>
+          <li><strong>Product</strong> — E-ticaret ürün sayfaları</li>
+          <li><strong>FAQPage</strong> — Sıkça sorulan sorular</li>
+          <li><strong>LocalBusiness / Restaurant</strong> — Yerel işletmeler</li>
+          <li><strong>Organization</strong> — Şirket/kuruluş sayfaları</li>
+          <li><strong>WebSite</strong> — Ana sayfa, site geneli</li>
+          <li><strong>Event</strong> — Etkinlik sayfaları</li>
+          <li><strong>Recipe</strong> — Yemek tarifleri</li>
+          <li><strong>JobPosting</strong> — İş ilanları</li>
+          <li><strong>Course</strong> — Eğitim/kurs sayfaları</li>
+          <li><strong>HowTo</strong> — Nasıl yapılır kılavuzları</li>
+          <li><strong>Review / AggregateRating</strong> — Değerlendirmeler</li>
+          <li><strong>VideoObject</strong> — Video sayfaları</li>
+          <li><strong>BreadcrumbList</strong> — Breadcrumb navigasyonu</li>
+          <li><strong>SoftwareApplication</strong> — Yazılım ürünleri</li>
+        </ul>
+
+        <h2>Mimari</h2>
+        <p>Proje modüler bir yapıda organize edilmiştir:</p>
+        <ul>
+          <li><strong>crawler/</strong> — Playwright ile headless browser tarama, sayfa içerik çıkarma, mevcut schema tespiti</li>
+          <li><strong>schema/</strong> — Schema.org vocabulary yönetimi, sayfa tipi algılama, JSON-LD doğrulama</li>
+          <li><strong>ai/</strong> — Azure OpenAI entegrasyonu, prompt şablonları, schema üretim/denetim</li>
+          <li><strong>reporter/</strong> — Markdown ve CSV rapor üretimi</li>
+          <li><strong>input/</strong> — CSV okuma, URL doğrulama</li>
+          <li><strong>utils/</strong> — Yapılandırma, disk cache, rate limiter, ilerleme göstergesi</li>
+        </ul>
+
+        <h2>API Referansı</h2>
+        <h3>POST /api/generate</h3>
+        <p>Tek bir URL için schema üretir.</p>
+        <pre><code>// İstek
+{ "url": "https://example.com", "type": "Article" }
+
+// Yanıt
+{
+  "crawlResult": { "pageContent": {...}, "existingSchemas": [...] },
+  "detectedType": { "type": "Article", "confidence": 0.85, "signals": [...] },
+  "usedType": "Article",
+  "vocabularyInfo": { "type": "Article", "properties": ["headline", "author", ...] },
+  "generatedSchema": { "@context": "https://schema.org", "@type": "Article", ... },
+  "validationResult": { "valid": true, "errors": [], "warnings": [] }
+}</code></pre>
+
+        <h3>POST /api/audit</h3>
+        <p>Birden fazla URL'yi denetler.</p>
+        <pre><code>// İstek
+{ "urls": ["https://example.com", "https://example.com/blog"] }
+
+// Yanıt
+{
+  "results": [{ "url": "...", "auditResult": {...} }],
+  "summary": { "totalUrls": 2, "crawled": 2, ... },
+  "markdownReport": "# Schema Markup Denetim Raporu\n..."
+}</code></pre>
+      </div>
+
+      <!-- Workflow -->
+      <div class="section" id="sec-workflow">
+        <div class="section-title">İş Akışı</div>
+        <div class="section-subtitle">Araç pipeline'ları görselleştirmesi</div>
+
+        <div class="flow-label">Workflow A — Tekil Schema Üretimi</div>
+        <div class="flow">
+          <div class="flow-box"><div class="flow-box-title">URL Girişi</div><div class="flow-box-desc">Kullanıcıdan URL alınır</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box"><div class="flow-box-title">Crawler (Playwright)</div><div class="flow-box-desc">Headless Chrome ile sayfa taranır, JS render edilir</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-parallel">
+            <div class="flow-box"><div class="flow-box-title">pageExtractor</div><div class="flow-box-desc">Başlık, meta, headings, body, images, OG tags</div></div>
+            <div class="flow-box"><div class="flow-box-title">schemaExtractor</div><div class="flow-box-desc">Mevcut JSON-LD, Microdata tespiti</div></div>
+          </div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box"><div class="flow-box-title">TypeDetector</div><div class="flow-box-desc">URL pattern + OG tags + içerik analizi ile tip tahmini</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box"><div class="flow-box-title">VocabularyManager</div><div class="flow-box-desc">Schema.org'dan ilgili özellikler çekilir (dinamik, 800+ tip)</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box" style="border-color:var(--accent);"><div class="flow-box-title" style="color:var(--accent);">Azure OpenAI</div><div class="flow-box-desc">JSON mode ile yapısal JSON-LD üretimi</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box"><div class="flow-box-title">Validator</div><div class="flow-box-desc">Google gereksinimleri + vocabulary kontrolü</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box" style="border-color:var(--success);"><div class="flow-box-title" style="color:var(--success);">JSON-LD Çıktısı</div><div class="flow-box-desc">Kullanıma hazır yapılandırılmış veri</div></div>
+        </div>
+
+        <div class="flow-label" style="margin-top:48px;">Workflow B — Toplu Denetim</div>
+        <div class="flow">
+          <div class="flow-box"><div class="flow-box-title">CSV / URL Listesi</div><div class="flow-box-desc">URL'ler parse edilir</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box"><div class="flow-box-title">p-queue (Rate Limited)</div><div class="flow-box-desc">Domain bazlı crawl + API rate limiting</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-box"><div class="flow-box-title">Her URL İçin Pipeline</div><div class="flow-box-desc">Crawl → Extract → Detect Type → AI Audit → AuditResult</div></div>
+          <div class="flow-arrow">&#x2193;</div>
+          <div class="flow-parallel">
+            <div class="flow-box" style="border-color:var(--success);"><div class="flow-box-title" style="color:var(--success);">Markdown Rapor</div><div class="flow-box-desc">Detaylı URL bazlı analiz</div></div>
+            <div class="flow-box" style="border-color:var(--success);"><div class="flow-box-title" style="color:var(--success);">CSV Özet</div><div class="flow-box-desc">URL, Tip, Puan, Öncelik, Aksiyon</div></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /main -->
+  </div><!-- /app -->
+
+  <script>
+    // ========== State ==========
+    var state = { generated: 0, audited: 0, auditResults: null, markdownReport: null };
+
+    // ========== Navigation ==========
+    function navigate(section) {
+      document.querySelectorAll('.nav-item').forEach(function(el) { el.classList.remove('active'); });
+      document.querySelectorAll('.section').forEach(function(el) { el.classList.remove('active'); });
+      var navEl = document.querySelector('[data-section="' + section + '"]');
+      if (navEl) navEl.classList.add('active');
+      var secEl = document.getElementById('sec-' + section);
+      if (secEl) secEl.classList.add('active');
+    }
+    document.querySelectorAll('.nav-item').forEach(function(item) {
+      item.addEventListener('click', function() { navigate(this.dataset.section); });
+    });
+
+    // ========== Toast ==========
+    function toast(msg, type) {
+      var el = document.createElement('div');
+      el.className = 'toast toast-' + (type || 'success');
+      el.textContent = msg;
+      document.getElementById('toast-container').appendChild(el);
+      setTimeout(function() { el.remove(); }, 4000);
+    }
+
+    // ========== Helpers ==========
+    function esc(str) {
+      if (!str) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    }
+
+    function highlightJson(obj) {
+      var json = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+      return json
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+        .replace(/"([^"]+)"(?=\s*:)/g, '<span class="json-key">"$1"</span>')
+        .replace(/:\s*"([^"]*)"/g, ': <span class="json-string">"$1"</span>')
+        .replace(/:\s*(\d+\.?\d*)/g, ': <span class="json-number">$1</span>')
+        .replace(/:\s*(true|false)/g, ': <span class="json-bool">$1</span>')
+        .replace(/:\s*(null)/g, ': <span class="json-null">$1</span>');
+    }
+
+    function copyCode(text) {
+      navigator.clipboard.writeText(text).then(function() { toast('Panoya kopyalandı!', 'success'); });
+    }
+
+    // ========== Generate ==========
+    function runGenerate() {
+      var url = document.getElementById('gen-url').value.trim();
+      if (!url) { toast('Lütfen bir URL girin.', 'error'); return; }
+
+      var type = document.getElementById('gen-type').value;
+      var btn = document.getElementById('gen-btn');
+      var loading = document.getElementById('gen-loading');
+      var results = document.getElementById('gen-results');
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      results.style.display = 'none';
+
+      var body = { url: url };
+      if (type) body.type = type;
+
+      fetch('/api/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+      .then(function(r) {
+        loading.style.display = 'none';
+        btn.disabled = false;
+
+        if (!r.ok) {
+          toast('Hata: ' + (r.data.error || 'Bilinmeyen hata'), 'error');
+          return;
+        }
+
+        var d = r.data;
+        state.generated++;
+        document.getElementById('stat-generated').textContent = state.generated;
+        document.getElementById('stat-validation').textContent = d.validationResult.valid ? 'Geçerli' : 'Hatalı';
+
+        results.innerHTML = buildGenerateSteps(d);
+        results.style.display = 'block';
+
+        // Open all steps by default
+        results.querySelectorAll('.step').forEach(function(s) { s.classList.add('open'); });
+
+        toast('Schema başarıyla üretildi!', 'success');
+      })
+      .catch(function(e) {
+        loading.style.display = 'none';
+        btn.disabled = false;
+        toast('Bağlantı hatası: ' + e.message, 'error');
+      });
+    }
+
+    function toggleStep(el) {
+      el.closest('.step').classList.toggle('open');
+    }
+
+    function buildGenerateSteps(d) {
+      var html = '';
+
+      // Step 1: Crawl
+      var pc = d.crawlResult.pageContent;
+      var crawlBody = '<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">';
+      crawlBody += '<div><strong>Başlık:</strong> ' + esc(pc.title) + '</div>';
+      crawlBody += '<div><strong>HTTP:</strong> ' + d.crawlResult.statusCode + '</div>';
+      crawlBody += '<div><strong>Meta:</strong> ' + esc(pc.metaDescription || '—') + '</div>';
+      crawlBody += '<div><strong>Dil:</strong> ' + esc(pc.language || '—') + '</div>';
+      crawlBody += '<div><strong>Headings:</strong> ' + (pc.headings ? pc.headings.length : 0) + ' adet</div>';
+      crawlBody += '<div><strong>Görseller:</strong> ' + (pc.images ? pc.images.length : 0) + ' adet</div>';
+      crawlBody += '</div>';
+      if (d.crawlResult.existingSchemas && d.crawlResult.existingSchemas.length > 0) {
+        crawlBody += '<div style="margin-top:12px;"><strong>Mevcut Schemalar:</strong> ';
+        crawlBody += d.crawlResult.existingSchemas.map(function(s) {
+          return '<span class="badge badge-info">' + esc(s.type) + ' (' + s.format + ')</span> ';
+        }).join('');
+        crawlBody += '</div>';
+      } else {
+        crawlBody += '<div style="margin-top:12px; color:var(--text-muted);">Mevcut schema bulunamadı.</div>';
+      }
+      html += makeStep(1, 'Crawl Sonucu', 'Sayfa tarama verileri', crawlBody);
+
+      // Step 2: Type detection
+      var dt = d.detectedType;
+      var confPct = Math.round((dt.confidence || 0) * 100);
+      var confColor = confPct >= 70 ? 'var(--success)' : confPct >= 40 ? 'var(--warning)' : 'var(--error)';
+      var typeBody = '<div><strong>Algılanan Tip:</strong> <span class="badge badge-info">' + esc(dt.type) + '</span></div>';
+      if (d.usedType !== dt.type) {
+        typeBody += '<div style="margin-top:6px;"><strong>Kullanılan Tip (override):</strong> <span class="badge badge-warning">' + esc(d.usedType) + '</span></div>';
+      }
+      typeBody += '<div style="margin-top:10px;"><strong>Güven:</strong> ' + confPct + '%</div>';
+      typeBody += '<div class="confidence-bar"><div class="confidence-fill" style="width:' + confPct + '%;background:' + confColor + ';"></div></div>';
+      if (dt.signals && dt.signals.length) {
+        typeBody += '<div style="margin-top:12px;"><strong>Sinyaller:</strong></div><ul style="margin:6px 0 0 18px;color:var(--text-muted);font-size:13px;">';
+        dt.signals.forEach(function(s) { typeBody += '<li>' + esc(s) + '</li>'; });
+        typeBody += '</ul>';
+      }
+      html += makeStep(2, 'Tip Algılama', confPct + '% güven', typeBody);
+
+      // Step 3: Vocabulary
+      var vi = d.vocabularyInfo;
+      var vocabBody = '<div><strong>Tip:</strong> ' + esc(vi.type) + '</div>';
+      vocabBody += '<div style="margin-top:8px;"><strong>Kullanılan Özellikler:</strong></div>';
+      vocabBody += '<div class="chips" style="margin-top:8px;">';
+      (vi.properties || []).forEach(function(p) { vocabBody += '<span class="chip">' + esc(p) + '</span>'; });
+      vocabBody += '</div>';
+      html += makeStep(3, 'Vocabulary Bilgisi', (vi.properties || []).length + ' özellik', vocabBody);
+
+      // Step 4: Generated schema
+      var schemaJson = JSON.stringify(d.generatedSchema, null, 2);
+      var genBody = '<div class="code-block"><button class="btn btn-secondary btn-small copy-btn" onclick="copyCode(atob(\'' + btoa(unescape(encodeURIComponent(schemaJson))) + '\'))">Kopyala</button><pre>' + highlightJson(d.generatedSchema) + '</pre></div>';
+      html += makeStep(4, 'AI Üretim', esc(d.generatedSchema['@type']), genBody);
+
+      // Step 5: Validation
+      var vr = d.validationResult;
+      var valBody = '';
+      if (vr.valid) {
+        valBody += '<div class="validation-ok">&#x2705; Doğrulama başarılı — JSON-LD geçerli.</div>';
+      } else {
+        valBody += '<div class="validation-fail">&#x274C; Doğrulama hatalı</div>';
+      }
+      if (vr.errors && vr.errors.length) {
+        valBody += '<div style="margin-top:10px;"><strong>Hatalar:</strong></div>';
+        vr.errors.forEach(function(e) {
+          valBody += '<div class="issue-item"><span class="issue-icon" style="color:var(--error);">&#x1F534;</span><div>' + esc(e.message) + '</div></div>';
+        });
+      }
+      if (vr.warnings && vr.warnings.length) {
+        valBody += '<div style="margin-top:10px;"><strong>Uyarılar:</strong></div>';
+        vr.warnings.forEach(function(w) {
+          valBody += '<div class="issue-item"><span class="issue-icon" style="color:var(--warning);">&#x1F7E1;</span><div>' + esc(w.message);
+          if (w.suggestion) valBody += '<br><small style="color:var(--text-muted);">' + esc(w.suggestion) + '</small>';
+          valBody += '</div></div>';
+        });
+      }
+      html += makeStep(5, 'Doğrulama', vr.valid ? 'Geçerli' : vr.errors.length + ' hata', valBody);
+
+      // Step 6: Final output
+      var embedCode = '<script type="application/ld+json">\n' + schemaJson + '\n<\/script>';
+      var finalBody = '<p style="color:var(--text-muted);margin-bottom:12px;">Bu kodu sayfanızın <code>&lt;head&gt;</code> bölümüne ekleyin:</p>';
+      finalBody += '<div class="code-block"><button class="btn btn-secondary btn-small copy-btn" onclick="copyCode(atob(\'' + btoa(unescape(encodeURIComponent(embedCode))) + '\'))">HTML Kopyala</button><pre>' + esc(embedCode) + '</pre></div>';
+      html += makeStep(6, 'Son Çıktı', 'Panoya kopyalamaya hazır', finalBody);
+
+      return html;
+    }
+
+    function makeStep(num, title, desc, body) {
+      return '<div class="step">' +
+        '<div class="step-header" onclick="toggleStep(this)">' +
+        '<div class="step-num">' + num + '</div>' +
+        '<div class="step-title">' + esc(title) + '</div>' +
+        '<div class="step-desc">' + esc(desc) + '</div>' +
+        '<div class="step-arrow">&#x25B6;</div>' +
+        '</div>' +
+        '<div class="step-body">' + body + '</div>' +
+        '</div>';
+    }
+
+    // ========== Audit ==========
+    function runAudit() {
+      var raw = document.getElementById('audit-urls').value.trim();
+      if (!raw) { toast('Lütfen en az bir URL girin.', 'error'); return; }
+
+      var urls = raw.split('\n').map(function(s) { return s.trim(); }).filter(Boolean);
+      if (!urls.length) { toast('Geçerli URL bulunamadı.', 'error'); return; }
+
+      var btn = document.getElementById('audit-btn');
+      var loading = document.getElementById('audit-loading');
+      var resultsEl = document.getElementById('audit-results');
+
+      btn.disabled = true;
+      loading.style.display = 'block';
+      resultsEl.style.display = 'none';
+
+      fetch('/api/audit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ urls: urls })
+      })
+      .then(function(res) { return res.json().then(function(d) { return { ok: res.ok, data: d }; }); })
+      .then(function(r) {
+        loading.style.display = 'none';
+        btn.disabled = false;
+
+        if (!r.ok) {
+          toast('Hata: ' + (r.data.error || 'Bilinmeyen hata'), 'error');
+          return;
+        }
+
+        var data = r.data;
+        state.audited += data.results.length;
+        state.auditResults = data.results;
+        state.markdownReport = data.markdownReport;
+        document.getElementById('stat-audited').textContent = state.audited;
+
+        var scores = data.results.map(function(r) { return (r.auditResult && r.auditResult.score) || 0; });
+        var avg = scores.length ? Math.round(scores.reduce(function(a, b) { return a + b; }, 0) / scores.length) : 0;
+        document.getElementById('stat-score').textContent = avg + '/100';
+
+        renderAuditResults(data);
+        resultsEl.style.display = 'block';
+        toast('Denetim tamamlandı! ' + data.results.length + ' URL işlendi.', 'success');
+      })
+      .catch(function(e) {
+        loading.style.display = 'none';
+        btn.disabled = false;
+        toast('Bağlantı hatası: ' + e.message, 'error');
+      });
+    }
+
+    function renderAuditResults(data) {
+      var summary = data.summary;
+      var statsEl = document.getElementById('audit-stats');
+      statsEl.innerHTML =
+        '<div class="stat"><div class="stat-value">' + summary.totalUrls + '</div><div class="stat-label">Toplam URL</div></div>' +
+        '<div class="stat"><div class="stat-value">' + summary.crawled + '</div><div class="stat-label">Taranan</div></div>' +
+        '<div class="stat"><div class="stat-value">' + summary.errors + '</div><div class="stat-label">Hata</div></div>' +
+        '<div class="stat"><div class="stat-value">' + summary.withSchema + '</div><div class="stat-label">Schema Mevcut</div></div>' +
+        '<div class="stat"><div class="stat-value">' + summary.withoutSchema + '</div><div class="stat-label">Schema Eksik</div></div>' +
+        '<div class="stat"><div class="stat-value">' + summary.averageScore.toFixed(1) + '</div><div class="stat-label">Ort. Puan</div></div>';
+
+      var tbody = document.getElementById('audit-tbody');
+      tbody.innerHTML = '';
+
+      data.results.forEach(function(item) {
+        var ar = item.auditResult;
+        if (!ar) return;
+
+        var score = ar.score || 0;
+        var scoreColor = score >= 70 ? 'var(--success)' : score >= 40 ? 'var(--warning)' : 'var(--error)';
+        var priorityClass = { high: 'badge-error', medium: 'badge-warning', low: 'badge-success' }[ar.priority] || 'badge-muted';
+        var priorityLabel = { high: 'Yüksek', medium: 'Orta', low: 'Düşük' }[ar.priority] || ar.priority;
+
+        var mainRow = document.createElement('tr');
+        mainRow.style.cursor = 'pointer';
+        mainRow.innerHTML =
+          '<td>' + esc(ar.url) + '</td>' +
+          '<td>' + esc(ar.pageType) + '</td>' +
+          '<td style="color:' + scoreColor + ';font-weight:700;">' + score + '/100</td>' +
+          '<td><span class="badge ' + priorityClass + '">' + priorityLabel + '</span></td>' +
+          '<td>' + (ar.issues ? ar.issues.length : 0) + '</td>' +
+          '<td>' + (ar.existingSchemas ? ar.existingSchemas.length : 0) + '</td>';
+
+        var detailRow = document.createElement('tr');
+        detailRow.className = 'audit-detail-row';
+        var detailTd = document.createElement('td');
+        detailTd.colSpan = 6;
+        detailTd.innerHTML = buildAuditDetail(ar);
+        detailRow.appendChild(detailTd);
+
+        mainRow.addEventListener('click', function() {
+          detailRow.style.display = detailRow.style.display === 'table-row' ? 'none' : 'table-row';
+        });
+
+        tbody.appendChild(mainRow);
+        tbody.appendChild(detailRow);
+      });
+    }
+
+    function buildAuditDetail(ar) {
+      var html = '<div class="detail-grid">';
+
+      // Issues
+      html += '<div><div class="detail-section-title">Sorunlar</div>';
+      if (ar.issues && ar.issues.length) {
+        ar.issues.forEach(function(i) {
+          var icon = { error: '&#x1F534;', warning: '&#x1F7E1;', info: '&#x1F535;' }[i.severity] || '&#x1F535;';
+          html += '<div class="issue-item"><span class="issue-icon">' + icon + '</span><div><strong>' + esc(i.message) + '</strong>';
+          if (i.recommendation) html += '<br><small style="color:var(--text-muted);">' + esc(i.recommendation) + '</small>';
+          html += '</div></div>';
+        });
+      } else {
+        html += '<div style="color:var(--text-muted);">Sorun bulunamadı.</div>';
+      }
+      html += '</div>';
+
+      // Right column
+      html += '<div>';
+      if (ar.existingSchemas && ar.existingSchemas.length) {
+        html += '<div class="detail-section-title">Mevcut Schemalar</div>';
+        ar.existingSchemas.forEach(function(s) {
+          html += '<div style="margin-bottom:4px;"><span class="badge badge-info">' + esc(s.type) + '</span> <small>(' + s.format + ') ' + (s.valid ? 'Geçerli' : 'Hatalı') + '</small></div>';
+        });
+      }
+      if (ar.missingSchemas && ar.missingSchemas.length) {
+        html += '<div class="detail-section-title" style="margin-top:12px;">Eksik Schemalar</div>';
+        ar.missingSchemas.forEach(function(s) {
+          html += '<div style="margin-bottom:4px;"><span class="badge badge-warning">' + esc(s) + '</span></div>';
+        });
+      }
+      html += '</div></div>';
+
+      if (ar.suggestedSchema) {
+        var suggestedJson = JSON.stringify(ar.suggestedSchema, null, 2);
+        html += '<div style="margin-top:16px;"><div class="detail-section-title">Önerilen Schema</div>';
+        html += '<div class="code-block"><button class="btn btn-secondary btn-small copy-btn" onclick="event.stopPropagation();copyCode(atob(\'' + btoa(unescape(encodeURIComponent(suggestedJson))) + '\'))">Kopyala</button><pre>' + highlightJson(ar.suggestedSchema) + '</pre></div></div>';
+      }
+
+      return html;
+    }
+
+    // ========== Downloads ==========
+    function downloadMarkdown() {
+      if (!state.markdownReport) { toast('Önce denetim çalıştırın.', 'error'); return; }
+      var blob = new Blob([state.markdownReport], { type: 'text/markdown' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'audit-report.md';
+      a.click();
+    }
+
+    function downloadCsv() {
+      if (!state.auditResults || !state.auditResults.length) { toast('Önce denetim çalıştırın.', 'error'); return; }
+      var rows = [['URL', 'Sayfa Tipi', 'Puan', 'Öncelik', 'Sorun Sayısı', 'Schema Mevcut']];
+      state.auditResults.forEach(function(item) {
+        var ar = item.auditResult;
+        if (!ar) return;
+        rows.push([ar.url, ar.pageType, ar.score, ar.priority, ar.issues ? ar.issues.length : 0, ar.existingSchemas && ar.existingSchemas.length > 0 ? 'Evet' : 'Hayır']);
+      });
+      var csv = rows.map(function(r) { return r.map(function(c) { return '"' + String(c).replace(/"/g, '""') + '"'; }).join(','); }).join('\n');
+      var blob = new Blob([csv], { type: 'text/csv' });
+      var a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'audit-summary.csv';
+      a.click();
+    }
+  </script>
+</body>
+</html>

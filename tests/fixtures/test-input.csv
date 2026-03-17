@@ -1,0 +1,6 @@
+url,page_type,priority,notes
+https://example.com,WebPage,high,Test home page
+https://example.com/blog/test-article,Article,medium,Blog article test
+https://example.com/products/test-product,Product,high,Product page test
+https://example.com/faq,FAQPage,low,FAQ page test
+https://example.com/contact,ContactPage,medium,Contact page

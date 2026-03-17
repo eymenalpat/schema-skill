@@ -1,0 +1,8 @@
+url,page_type,schemas,priority,notes
+https://www.example.com,homepage,"Organization,WebSite,SearchAction",high,Ana sayfa
+https://www.example.com/products/item,product,"Product,Offer,BreadcrumbList",high,Ürün detay
+https://www.example.com/blog/post,blog,"BlogPosting,BreadcrumbList",medium,Blog yazısı
+https://www.example.com/category,category,"ItemList,BreadcrumbList",medium,Kategori sayfası
+https://www.example.com/faq,faq,"FAQPage,BreadcrumbList",medium,SSS sayfası
+https://www.example.com/contact,contact,"ContactPage,LocalBusiness",low,İletişim sayfası
+https://www.example.com/about,about,"Organization,AboutPage",low,Hakkımızda
