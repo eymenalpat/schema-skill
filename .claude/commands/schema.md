@@ -32,7 +32,8 @@ KULLANICININ PROJE DİZİNİNDE (şu anki çalışma dizini) domain adında klas
 ```
 {domain}/
 ├── schemas/
-│   ├── {sayfa-slug}-{schema-type-lowercase}.json
+│   ├── {sayfa-slug}-{schema-type-lowercase}.json   # Her schema ayrı dosya
+│   ├── {sayfa-slug}-merged.json                     # Tek script tag için @graph birleşik versiyon
 │   └── ...
 ├── rapor/
 │   └── rapor.csv
@@ -54,6 +55,18 @@ Sayfa slug'ı URL path'inden türetilir. Örnek:
 - Yorum satırı OLMAMALI (geçerli JSON)
 - Her JSON-LD dosyası `<script type="application/ld+json">` içine koyulmaya hazır olmalı
 - Dosya adı formatı: `{sayfa-slug}-{schema-type-lowercase}.json`
+- Bir sayfa için birden fazla schema varsa `{sayfa-slug}-merged.json` dosyası da oluştur
+- Merged dosya `@graph` formatında olmalı:
+  ```json
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      { "@type": "Organization", ... },
+      { "@type": "WebSite", ... }
+    ]
+  }
+  ```
+- Merged dosya da validate edilmeli ve raporda ayrı satır olarak gösterilmeli
 
 ## Rapor CSV Formatı
 rapor/ klasöründe `rapor.csv` oluştur:

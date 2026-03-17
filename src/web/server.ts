@@ -114,6 +114,14 @@ app.post('/api/generate', async (req: Request, res: Response) => {
       generatedSchemas.map((schema) => validateJsonLd(schema, vocabContext)),
     );
 
+    // Build merged @graph for CRMs that need single script tag
+    const mergedSchema = generatedSchemas.length > 1
+      ? {
+          '@context': 'https://schema.org' as const,
+          '@graph': generatedSchemas.map(({ '@context': _ctx, ...rest }) => rest),
+        }
+      : null;
+
     res.json({
       crawlResult: {
         pageContent: {
@@ -137,7 +145,7 @@ app.post('/api/generate', async (req: Request, res: Response) => {
       },
       generatedSchemas,
       validationResults,
-      // Backward compatibility: expose first schema as generatedSchema
+      mergedSchema,
       generatedSchema: generatedSchemas[0] ?? null,
       validationResult: validationResults[0] ?? null,
     });

@@ -109,23 +109,41 @@ export function registerGenerateCommand(program: Command): void {
           );
           console.log(chalk.dim(`\n  Generated ${generatedSchemas.length} schema(s): ${typeNames.join(', ')}`));
 
+          // Build merged @graph JSON-LD (for CRMs that need a single script tag)
+          const mergedSchema = generatedSchemas.length > 1
+            ? {
+                '@context': 'https://schema.org',
+                '@graph': generatedSchemas.map(({ '@context': _ctx, ...rest }) => rest),
+              }
+            : null;
+
           if (options.output) {
+            const ext = path.extname(options.output);
+            const base = options.output.slice(0, options.output.length - ext.length);
+
             if (generatedSchemas.length === 1) {
               await fs.writeFile(options.output, JSON.stringify(generatedSchemas[0], null, 2), 'utf-8');
               console.log(chalk.green(`\nSchema written to ${options.output}`));
             } else {
-              const ext = path.extname(options.output);
-              const base = options.output.slice(0, options.output.length - ext.length);
+              // Individual files
               for (const schema of generatedSchemas) {
                 const t = Array.isArray(schema['@type']) ? schema['@type'].join('-') : schema['@type'];
                 const fileName = `${base}-${t}${ext || '.json'}`;
                 await fs.writeFile(fileName, JSON.stringify(schema, null, 2), 'utf-8');
                 console.log(chalk.green(`  Schema written to ${fileName}`));
               }
+              // Merged file
+              const mergedFileName = `${base}-merged${ext || '.json'}`;
+              await fs.writeFile(mergedFileName, JSON.stringify(mergedSchema, null, 2), 'utf-8');
+              console.log(chalk.green(`  Merged schema written to ${mergedFileName}`));
             }
           } else {
             for (const schema of generatedSchemas) {
               console.log('\n' + JSON.stringify(schema, null, 2));
+            }
+            if (mergedSchema) {
+              console.log(chalk.dim('\n--- Merged @graph (tek script tag için) ---'));
+              console.log('\n' + JSON.stringify(mergedSchema, null, 2));
             }
           }
         } finally {
