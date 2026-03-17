@@ -39,7 +39,10 @@ Kullanıcının proje dizininde, her domain için ayrı klasör:
 ├── schemas/
 │   ├── homepage-organization.json
 │   ├── homepage-website.json
+│   ├── homepage-merged.json              # Tüm homepage schemaları tek @graph dosyasında
 │   ├── blog-my-post-article.json
+│   ├── blog-my-post-breadcrumblist.json
+│   ├── blog-my-post-merged.json          # Tüm blog-my-post schemaları tek @graph dosyasında
 │   └── ...
 ├── rapor/
 │   ├── rapor.csv
@@ -48,6 +51,22 @@ Kullanıcının proje dizininde, her domain için ayrı klasör:
     ├── schema-dokumantasyonu.md
     └── {type}-detay.md
 ```
+
+## Merged (@graph) Dosyaları
+Bir sayfa için birden fazla schema üretildiyse, ayrı dosyaların yanında `{sayfa-slug}-merged.json` oluştur:
+```json
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    { "@type": "Organization", ... },
+    { "@type": "WebSite", ... }
+  ]
+}
+```
+Bu dosya tek `<script type="application/ld+json">` tag'ı gerektiren CRM'ler içindir.
+
+## Doğrulama ve Otomatik Düzeltme
+Her üretilen schema otomatik olarak doğrulanır. Hata varsa AI'a geri gönderilip düzeltilir (max 2 deneme). Çıktıda yalnızca doğrulanmış schemalar yer alır.
 
 ## Rapor CSV
 ```csv

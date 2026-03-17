@@ -30,8 +30,12 @@ Kullanıcının proje dizininde:
 │   ├── audit-rapor.csv
 │   └── audit-rapor.md
 └── schemas/
-    └── onerilen-{slug}-{type}.json
+    ├── onerilen-{slug}-{type}.json        # Her eksik schema ayrı dosya
+    └── onerilen-{slug}-merged.json         # Eksik schemalar tek @graph dosyasında
 ```
+
+## Doğrulama ve Otomatik Düzeltme
+Önerilen her schema otomatik doğrulanır. Hata varsa AI'a geri gönderilip düzeltilir (max 2 deneme). Çıktıda yalnızca doğrulanmış schemalar yer alır. Merged dosya da validate edilir.
 
 ## Audit CSV Formatı
 ```csv
