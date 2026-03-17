@@ -1,15 +1,52 @@
 import type { PageContent, ExistingSchema } from '../types/crawl.js';
-import type { GeneratedSchema } from '../types/schema.js';
+import type { GeneratedSchema, ValidationResult } from '../types/schema.js';
 import type { AuditResult, AuditIssue } from '../types/report.js';
 import { getAIClient, getDeploymentName } from './client.js';
-import { buildGeneratePrompt, buildAuditPrompt } from './prompts.js';
+import { buildGeneratePrompt, buildAuditPrompt, buildFixPrompt } from './prompts.js';
 
+const MAX_FIX_ATTEMPTS = 2;
+
+/** Validator function type — injected by the caller */
+export type SchemaValidator = (schema: GeneratedSchema) => Promise<ValidationResult>;
+
+function parseSchemaResponse(content: string, fallbackType: string): GeneratedSchema[] {
+  const parsed = JSON.parse(content) as Record<string, unknown>;
+
+  if (Array.isArray(parsed['schemas'])) {
+    const rawSchemas = parsed['schemas'] as Record<string, unknown>[];
+    return rawSchemas.map((raw) => ({
+      '@context': (raw['@context'] as string) ?? 'https://schema.org',
+      '@type': (raw['@type'] as string | string[]) ?? fallbackType,
+      ...raw,
+    }));
+  }
+
+  return [{
+    '@context': (parsed['@context'] as string) ?? 'https://schema.org',
+    '@type': (parsed['@type'] as string | string[]) ?? fallbackType,
+    ...parsed,
+  }];
+}
+
+function getSchemaType(schema: GeneratedSchema): string {
+  return Array.isArray(schema['@type']) ? schema['@type'].join(', ') : schema['@type'];
+}
+
+/**
+ * Generate schemas, validate them, and auto-fix if there are errors.
+ * Retries up to MAX_FIX_ATTEMPTS times by feeding errors back to the AI.
+ */
 export async function generateSchema(
   pageContent: PageContent,
   existingSchemas: ExistingSchema[],
   detectedType: string,
   vocabularyInfo: string,
+  validator?: SchemaValidator,
 ): Promise<GeneratedSchema[]> {
+  const client = getAIClient();
+  const deploymentName = getDeploymentName();
+
+  // --- Step 1: Initial generation ---
   const [systemMessage, userMessage] = buildGeneratePrompt({
     pageContent,
     detectedType,
@@ -17,8 +54,7 @@ export async function generateSchema(
     existingSchemas,
   });
 
-  const client = getAIClient();
-  const deploymentName = getDeploymentName();
+  let schemas: GeneratedSchema[];
 
   try {
     const response = await client.chat.completions.create({
@@ -32,41 +68,75 @@ export async function generateSchema(
     });
 
     const content = response.choices[0]?.message?.content;
-    if (!content) {
-      throw new Error('AI returned an empty response.');
-    }
-
-    const parsed = JSON.parse(content) as Record<string, unknown>;
-
-    // Handle new multi-schema format: { "schemas": [...] }
-    if (Array.isArray(parsed['schemas'])) {
-      const rawSchemas = parsed['schemas'] as Record<string, unknown>[];
-      return rawSchemas.map((raw) => ({
-        '@context': (raw['@context'] as string) ?? 'https://schema.org',
-        '@type': (raw['@type'] as string | string[]) ?? detectedType,
-        ...raw,
-      }));
-    }
-
-    // Backward compatibility: handle old single-object format
-    const schema: GeneratedSchema = {
-      '@context': (parsed['@context'] as string) ?? 'https://schema.org',
-      '@type': (parsed['@type'] as string | string[]) ?? detectedType,
-      ...parsed,
-    };
-
-    return [schema];
+    if (!content) throw new Error('AI returned an empty response.');
+    schemas = parseSchemaResponse(content, detectedType);
   } catch (error) {
     if (error instanceof SyntaxError) {
-      throw new Error(
-        `Failed to parse AI response as JSON: ${error.message}`,
-      );
+      throw new Error(`Failed to parse AI response as JSON: ${error.message}`);
     }
-    if (error instanceof Error) {
-      throw new Error(`Schema generation failed: ${error.message}`);
-    }
-    throw new Error('Schema generation failed due to an unknown error.');
+    throw error instanceof Error
+      ? new Error(`Schema generation failed: ${error.message}`)
+      : new Error('Schema generation failed due to an unknown error.');
   }
+
+  // --- Step 2: If no validator provided, return as-is ---
+  if (!validator) return schemas;
+
+  // --- Step 3: Validate + auto-fix loop ---
+  for (let attempt = 0; attempt < MAX_FIX_ATTEMPTS; attempt++) {
+    const validationErrors: { schemaType: string; errors: string[]; warnings: string[] }[] = [];
+    let hasErrors = false;
+
+    for (const schema of schemas) {
+      const result = await validator(schema);
+      if (!result.valid) {
+        hasErrors = true;
+        validationErrors.push({
+          schemaType: getSchemaType(schema),
+          errors: result.errors.map((e) => e.message),
+          warnings: result.warnings.map((w) => w.message),
+        });
+      } else if (result.warnings.length > 0) {
+        validationErrors.push({
+          schemaType: getSchemaType(schema),
+          errors: [],
+          warnings: result.warnings.map((w) => w.message),
+        });
+      }
+    }
+
+    if (!hasErrors) return schemas;
+
+    // --- Fix attempt ---
+    console.log(`[schemaSkill] Validation errors found, auto-fixing (attempt ${attempt + 1}/${MAX_FIX_ATTEMPTS})...`);
+
+    const [fixSystem, fixUser] = buildFixPrompt({
+      originalSchemas: schemas,
+      validationErrors,
+    });
+
+    try {
+      const fixResponse = await client.chat.completions.create({
+        model: deploymentName,
+        messages: [
+          { role: fixSystem.role, content: fixSystem.content },
+          { role: fixUser.role, content: fixUser.content },
+        ],
+        response_format: { type: 'json_object' },
+        max_completion_tokens: 4096,
+      });
+
+      const fixContent = fixResponse.choices[0]?.message?.content;
+      if (fixContent) {
+        schemas = parseSchemaResponse(fixContent, detectedType);
+      }
+    } catch {
+      // If fix attempt fails, return what we have
+      break;
+    }
+  }
+
+  return schemas;
 }
 
 interface RawAuditResponse {

@@ -21,7 +21,6 @@ export function registerGenerateCommand(program: Command): void {
       const spinner = createSpinner('Starting schema generation...');
 
       try {
-        // Validate URL
         const urlResult = validateUrl(url);
         if (!urlResult.valid) {
           spinner.fail(urlResult.error!);
@@ -29,12 +28,10 @@ export function registerGenerateCommand(program: Command): void {
         }
         const normalizedUrl = urlResult.normalized;
 
-        // Step 1: Initialize vocabulary manager in parallel with crawling
         spinner.update('Initializing...');
         const vocabManager = createVocabularyManager();
         const vocabInitPromise = vocabManager.initialize();
 
-        // Step 2: Crawl the page
         spinner.update('Crawling page...');
         const crawler = await createCrawler();
 
@@ -46,11 +43,9 @@ export function registerGenerateCommand(program: Command): void {
             process.exit(1);
           }
 
-          // Wait for vocabulary
           spinner.update('Loading Schema.org vocabulary...');
           await vocabInitPromise;
 
-          // Step 3: Detect page type
           spinner.update('Detecting page type...');
           const { type: detectedType, confidence } = detectPageTypeWithConfidence(
             crawlResult.pageContent,
@@ -63,59 +58,52 @@ export function registerGenerateCommand(program: Command): void {
             console.log(chalk.dim(`  Using override type: ${options.type}`));
           }
 
-          // Step 4: Get vocabulary info
           spinner.update('Preparing vocabulary context...');
           const recommendedProps = await vocabManager.getRecommendedProperties(finalType);
           const vocabularyInfo = recommendedProps
             .map((p) => `- ${p.name}: ${p.description} (expected types: ${p.rangeTypes.join(', ')})`)
             .join('\n');
 
-          // Step 5: Generate schemas via AI
-          spinner.update('Generating schemas with AI...');
-          const generatedSchemas = await generateSchema(
-            crawlResult.pageContent,
-            crawlResult.existingSchemas,
-            finalType,
-            vocabularyInfo,
-          );
-
-          // Step 6: Validate each schema
-          spinner.update('Validating schemas...');
+          // Generate schemas WITH built-in validation + auto-fix
+          spinner.update('Generating schemas with AI (with auto-validation)...');
           const vocabContext = {
             isValidType: (name: string) => vocabManager.isValidTypeSync(name),
             getType: (name: string) => vocabManager.getTypeSync(name),
             getPropertiesForType: (name: string) => vocabManager.getPropertiesForTypeSync(name),
           };
 
-          let hasValidationIssues = false;
+          const generatedSchemas = await generateSchema(
+            crawlResult.pageContent,
+            crawlResult.existingSchemas,
+            finalType,
+            vocabularyInfo,
+            async (schema) => validateJsonLd(schema, vocabContext),
+          );
+
+          // Final validation report (post auto-fix)
+          spinner.update('Final validation...');
+          let allValid = true;
           for (const schema of generatedSchemas) {
             const schemaType = Array.isArray(schema['@type']) ? schema['@type'].join(', ') : schema['@type'];
-            const validationResult = await validateJsonLd(schema, vocabContext);
+            const result = await validateJsonLd(schema, vocabContext);
 
-            if (validationResult.warnings.length > 0) {
-              console.log(chalk.yellow(`\n  Validation warnings for ${schemaType}:`));
-              for (const warning of validationResult.warnings) {
-                console.log(chalk.yellow(`    - ${warning.message}`));
-              }
+            if (result.warnings.length > 0) {
+              console.log(chalk.yellow(`\n  Warnings for ${schemaType}:`));
+              for (const w of result.warnings) console.log(chalk.yellow(`    - ${w.message}`));
             }
-
-            if (!validationResult.valid) {
-              hasValidationIssues = true;
-              console.log(chalk.red(`\n  Validation errors for ${schemaType}:`));
-              for (const error of validationResult.errors) {
-                console.log(chalk.red(`    - ${error.message}`));
-              }
+            if (!result.valid) {
+              allValid = false;
+              console.log(chalk.red(`\n  Errors for ${schemaType} (could not auto-fix):`));
+              for (const e of result.errors) console.log(chalk.red(`    - ${e.message}`));
             }
           }
 
-          if (hasValidationIssues) {
-            console.log(chalk.yellow(`\n  Schemas generated with validation issues. Review carefully.`));
+          if (allValid) {
+            spinner.succeed('Schema generation complete — all schemas validated.');
+          } else {
+            spinner.succeed('Schema generation complete (some issues remain).');
           }
 
-          // Step 7: Output
-          spinner.succeed('Schema generation complete.');
-
-          // Summary
           const typeNames = generatedSchemas.map((s) =>
             Array.isArray(s['@type']) ? s['@type'].join(', ') : s['@type'],
           );
@@ -123,19 +111,15 @@ export function registerGenerateCommand(program: Command): void {
 
           if (options.output) {
             if (generatedSchemas.length === 1) {
-              const schemaOutput = JSON.stringify(generatedSchemas[0], null, 2);
-              await fs.writeFile(options.output, schemaOutput, 'utf-8');
+              await fs.writeFile(options.output, JSON.stringify(generatedSchemas[0], null, 2), 'utf-8');
               console.log(chalk.green(`\nSchema written to ${options.output}`));
             } else {
               const ext = path.extname(options.output);
               const base = options.output.slice(0, options.output.length - ext.length);
               for (const schema of generatedSchemas) {
-                const schemaType = Array.isArray(schema['@type'])
-                  ? schema['@type'].join('-')
-                  : schema['@type'];
-                const fileName = `${base}-${schemaType}${ext || '.json'}`;
-                const schemaOutput = JSON.stringify(schema, null, 2);
-                await fs.writeFile(fileName, schemaOutput, 'utf-8');
+                const t = Array.isArray(schema['@type']) ? schema['@type'].join('-') : schema['@type'];
+                const fileName = `${base}-${t}${ext || '.json'}`;
+                await fs.writeFile(fileName, JSON.stringify(schema, null, 2), 'utf-8');
                 console.log(chalk.green(`  Schema written to ${fileName}`));
               }
             }

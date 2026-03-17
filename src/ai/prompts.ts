@@ -114,6 +114,55 @@ Generate all appropriate JSON-LD schemas for this page. The primary detected typ
   return [systemMessage, userMessage];
 }
 
+export interface FixPromptParams {
+  originalSchemas: Record<string, unknown>[];
+  validationErrors: { schemaType: string; errors: string[]; warnings: string[] }[];
+}
+
+export function buildFixPrompt(
+  params: FixPromptParams,
+): [PromptMessage, PromptMessage] {
+  const systemMessage: PromptMessage = {
+    role: 'system',
+    content: `You are a Schema.org structured data expert. You previously generated JSON-LD schemas but they have validation errors. Fix ALL the errors and return corrected schemas.
+
+Rules:
+- Fix every reported error and warning
+- Keep the same schema types and structure — only fix the problems
+- Each schema must have "@context": "https://schema.org" and a valid "@type"
+- All required properties for the type must be present (per Google Rich Results guidelines)
+- Property names must be valid for the declared @type
+- URL fields must contain valid URLs
+- Return a JSON object with key "schemas" containing the corrected array
+- Return ONLY valid JSON. No explanation.`,
+  };
+
+  const schemasJson = JSON.stringify(params.originalSchemas, null, 2);
+  const errorsFormatted = params.validationErrors
+    .map((ve) => {
+      const lines = [`Schema @type="${ve.schemaType}":`];
+      for (const e of ve.errors) lines.push(`  ERROR: ${e}`);
+      for (const w of ve.warnings) lines.push(`  WARNING: ${w}`);
+      return lines.join('\n');
+    })
+    .join('\n\n');
+
+  const userMessage: PromptMessage = {
+    role: 'user',
+    content: `Fix the following JSON-LD schemas. The validation errors are listed below.
+
+**Current Schemas (with errors):**
+${schemasJson}
+
+**Validation Errors:**
+${errorsFormatted}
+
+Return the corrected schemas in { "schemas": [...] } format.`,
+  };
+
+  return [systemMessage, userMessage];
+}
+
 export function buildAuditPrompt(
   params: AuditPromptParams,
 ): [PromptMessage, PromptMessage] {

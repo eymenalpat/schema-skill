@@ -94,19 +94,22 @@ app.post('/api/generate', async (req: Request, res: Response) => {
       .map((p) => `- ${p.name}: ${p.description} (expected types: ${p.rangeTypes.join(', ')})`)
       .join('\n');
 
-    const generatedSchemas = await generateSchema(
-      crawlResult.pageContent,
-      crawlResult.existingSchemas,
-      usedType,
-      vocabularyInfoStr,
-    );
-
     const vocabContext = {
       isValidType: (name: string) => vocabManager.isValidTypeSync(name),
       getType: (name: string) => vocabManager.getTypeSync(name),
       getPropertiesForType: (name: string) => vocabManager.getPropertiesForTypeSync(name),
     };
 
+    // Generate with built-in validation + auto-fix
+    const generatedSchemas = await generateSchema(
+      crawlResult.pageContent,
+      crawlResult.existingSchemas,
+      usedType,
+      vocabularyInfoStr,
+      async (schema) => validateJsonLd(schema, vocabContext),
+    );
+
+    // Final validation (post auto-fix)
     const validationResults = await Promise.all(
       generatedSchemas.map((schema) => validateJsonLd(schema, vocabContext)),
     );
