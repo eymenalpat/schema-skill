@@ -1,7 +1,0 @@
-URL,Sayfa Türü,Schema Türü,Dosya Adı,Test Sonucu,Notlar
-https://www.boyner.com.tr/mag/category/erkek-dunyasi,Kategori Sayfası,Organization,mag-category-erkek-dunyasi-organization.json,OK,Firma bilgileri ve sosyal medya profilleri dahil
-https://www.boyner.com.tr/mag/category/erkek-dunyasi,Kategori Sayfası,WebSite,mag-category-erkek-dunyasi-website.json,OK,SearchAction ile site içi arama desteği
-https://www.boyner.com.tr/mag/category/erkek-dunyasi,Kategori Sayfası,BreadcrumbList,mag-category-erkek-dunyasi-breadcrumblist.json,OK,Boyner MAG > Erkek Dünyası
-https://www.boyner.com.tr/mag/category/erkek-dunyasi,Kategori Sayfası,CollectionPage,mag-category-erkek-dunyasi-collectionpage.json,OK,Kategori sayfası ile ItemList referansı
-https://www.boyner.com.tr/mag/category/erkek-dunyasi,Kategori Sayfası,ItemList,mag-category-erkek-dunyasi-itemlist.json,OK,12 yazı URL'li ListItem olarak listelendi
-https://www.boyner.com.tr/mag/category/erkek-dunyasi,Kategori Sayfası,Merged (@graph),mag-category-erkek-dunyasi-merged.json,OK,Tüm 5 schema tek @graph altında birleştirildi
