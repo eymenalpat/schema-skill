@@ -1,0 +1,180 @@
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": "https://www.boyner.com.tr/#organization",
+      "name": "Boyner",
+      "legalName": "Boyner Büyük Mağazacılık A.Ş.",
+      "url": "https://www.boyner.com.tr",
+      "logo": {
+        "@type": "ImageObject",
+        "url": "https://www.boyner.com.tr/mag/images/boyner-mag.png",
+        "width": 250,
+        "height": 60
+      },
+      "contactPoint": [
+        {
+          "@type": "ContactPoint",
+          "telephone": "+90-444-29-67",
+          "contactType": "customer service",
+          "availableLanguage": "Turkish"
+        },
+        {
+          "@type": "ContactPoint",
+          "telephone": "+90-850-800-29-67",
+          "contactType": "customer service",
+          "availableLanguage": "Turkish"
+        }
+      ],
+      "sameAs": [
+        "https://www.facebook.com/boyneronline/",
+        "https://www.instagram.com/boyner/",
+        "https://www.youtube.com/user/BoynerMagazalari",
+        "https://x.com/boyneronline"
+      ]
+    },
+    {
+      "@type": "WebSite",
+      "@id": "https://www.boyner.com.tr/#website",
+      "name": "Boyner",
+      "alternateName": "Boyner MAG",
+      "url": "https://www.boyner.com.tr",
+      "inLanguage": "tr-TR",
+      "publisher": {
+        "@id": "https://www.boyner.com.tr/#organization"
+      },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": {
+          "@type": "EntryPoint",
+          "urlTemplate": "https://www.boyner.com.tr/arama?q={search_term_string}"
+        },
+        "query-input": "required name=search_term_string"
+      }
+    },
+    {
+      "@type": "BreadcrumbList",
+      "@id": "https://www.boyner.com.tr/mag/category/erkek-dunyasi#breadcrumblist",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Boyner MAG",
+          "item": "https://www.boyner.com.tr/mag"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Erkek Dünyası",
+          "item": "https://www.boyner.com.tr/mag/category/erkek-dunyasi"
+        }
+      ]
+    },
+    {
+      "@type": "CollectionPage",
+      "@id": "https://www.boyner.com.tr/mag/category/erkek-dunyasi#collectionpage",
+      "name": "Erkek Dünyası",
+      "url": "https://www.boyner.com.tr/mag/category/erkek-dunyasi",
+      "description": "Boyner MAG Erkek Dünyası kategorisindeki moda, bakım ve stil yazıları",
+      "inLanguage": "tr-TR",
+      "isPartOf": {
+        "@id": "https://www.boyner.com.tr/#website"
+      },
+      "breadcrumb": {
+        "@id": "https://www.boyner.com.tr/mag/category/erkek-dunyasi#breadcrumblist"
+      },
+      "about": {
+        "@type": "Thing",
+        "name": "Erkek Moda ve Bakım"
+      },
+      "publisher": {
+        "@id": "https://www.boyner.com.tr/#organization"
+      },
+      "mainEntity": {
+        "@id": "https://www.boyner.com.tr/mag/category/erkek-dunyasi#itemlist"
+      }
+    },
+    {
+      "@type": "ItemList",
+      "@id": "https://www.boyner.com.tr/mag/category/erkek-dunyasi#itemlist",
+      "name": "Erkek Dünyası Yazıları",
+      "description": "Boyner MAG Erkek Dünyası kategorisindeki tüm içerikler",
+      "numberOfItems": 12,
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "En İyi 10 Kalıcı Erkek Parfüm Önerileri",
+          "url": "https://www.boyner.com.tr/mag/en-iyi-10-kalici-erkek-parfum-onerileri"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": "Yüz Şekline Göre Doğru Saç Kesimi Nasıl Seçilir?",
+          "url": "https://www.boyner.com.tr/mag/yuz-sekline-gore-dogru-sac-kesimi-secmek"
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": "2024-2025 Sonbahar/Kış Erkek Giyim Trendlerini Keşfet",
+          "url": "https://www.boyner.com.tr/mag/2024-2025-sonbahar-kis-erkek-giyim-trendlerini-kesfet"
+        },
+        {
+          "@type": "ListItem",
+          "position": 4,
+          "name": "Kravat Takmadan Takım Elbise Giyilir Mi?",
+          "url": "https://www.boyner.com.tr/mag/kravat-takmadan-takim-elbise-giyilir-mi"
+        },
+        {
+          "@type": "ListItem",
+          "position": 5,
+          "name": "Yüz Şekline Göre Sakal Stilin Ne Olmalı?",
+          "url": "https://www.boyner.com.tr/mag/yuz-sekline-gore-sakal-stilin-ne-olmali"
+        },
+        {
+          "@type": "ListItem",
+          "position": 6,
+          "name": "Daha Çekici Olmanın 7 Sırrı",
+          "url": "https://www.boyner.com.tr/mag/daha-cekici-olmanin-7-sirri"
+        },
+        {
+          "@type": "ListItem",
+          "position": 7,
+          "name": "Erkekler Nasıl Giyinmeli? Tarz Sahibi 6 İpucu",
+          "url": "https://www.boyner.com.tr/mag/erkekler-nasil-giyinmeli"
+        },
+        {
+          "@type": "ListItem",
+          "position": 8,
+          "name": "Erkek Saç Kesimi Nasıl Olmalı? 5 Farklı Modeli Keşfet",
+          "url": "https://www.boyner.com.tr/mag/erkek-sac-kesimi-nasil-olmali"
+        },
+        {
+          "@type": "ListItem",
+          "position": 9,
+          "name": "3 Adımda Sağlıklı Sakallar",
+          "url": "https://www.boyner.com.tr/mag/3-adimda-saglikli-sakallar"
+        },
+        {
+          "@type": "ListItem",
+          "position": 10,
+          "name": "Erkekler İçin Gömlek ve Pantolon Kombinleri",
+          "url": "https://www.boyner.com.tr/mag/erkekler-icin-gomlek-ve-pantolon-kombinleri"
+        },
+        {
+          "@type": "ListItem",
+          "position": 11,
+          "name": "Erkek Cilt Bakımı Nasıl Olmalı?",
+          "url": "https://www.boyner.com.tr/mag/erkek-cilt-bakimi-nasil-olmali"
+        },
+        {
+          "@type": "ListItem",
+          "position": 12,
+          "name": "Polo Yaka Tişörtlerle 3 Kombin Önerisi",
+          "url": "https://www.boyner.com.tr/mag/polo-yaka-tisortlerle-3-kombin-onerisi"
+        }
+      ]
+    }
+  ]
+}

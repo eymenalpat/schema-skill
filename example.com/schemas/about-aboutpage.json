@@ -1,0 +1,21 @@
+{
+  "@context": "https://schema.org",
+  "@type": "AboutPage",
+  "@id": "https://www.example.com/about#aboutpage",
+  "name": "About Us",
+  "url": "https://www.example.com/about",
+  "description": "Learn more about Example Domain, our mission, and our team.",
+  "inLanguage": "en",
+  "isPartOf": {
+    "@id": "https://www.example.com/#website"
+  },
+  "breadcrumb": {
+    "@id": "https://www.example.com/about#breadcrumblist"
+  },
+  "mainEntity": {
+    "@id": "https://www.example.com/#organization"
+  },
+  "publisher": {
+    "@id": "https://www.example.com/#organization"
+  }
+}
