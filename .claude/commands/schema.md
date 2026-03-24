@@ -2,7 +2,12 @@
 description: "Tek URL için tüm uygun Schema.org JSON-LD markup'larını üret"
 ---
 
-$ARGUMENTS URL olarak kullanılacak.
+$ARGUMENTS URL ve opsiyonel `validate` flag'i olarak kullanılacak.
+
+Argüman parse:
+- `$ARGUMENTS` = `https://example.com` → URL: `https://example.com`, doğrulama: **kapalı**
+- `$ARGUMENTS` = `https://example.com validate` → URL: `https://example.com`, doğrulama: **açık** (Playwright MCP ile Google Rich Results Test)
+- `$ARGUMENTS` = `https://example.com | validate` → Aynı şekilde doğrulama **açık**
 
 ## Ön Kontrol
 Aracın dizini `$SKILL_DIR` (bu komut dosyasının bulunduğu repo kök dizini).
@@ -118,3 +123,15 @@ Ana doküman. Aşağıdaki yapıda yaz (müşteri firmanın adını ve domain'in
 - Hangi sayfalara eklenmeli
 - Hangi alanlar DİNAMİK (sayfaya göre değişen), hangileri STATİK (sabit)
 - Örnek JSON-LD (DİNAMİK ve STATİK alanlar `// DİNAMİK:` ve `// STATİK:` yorumlarıyla açıklanmış — bu sadece dokümantasyon içindir, gerçek schema dosyasında yorum olmaz)
+
+## Playwright MCP ile Google Rich Results Test Doğrulaması (validate modu)
+Eğer kullanıcı `validate` flag'i verdiyse, schema üretimi tamamlandıktan sonra Google Rich Results Test doğrulaması yap:
+
+1. Playwright MCP kullanarak `https://search.google.com/test/rich-results` adresine git
+2. URL giriş alanına test edilecek URL'yi yaz
+3. "URL'yi test et" / "Test URL" butonuna tıkla
+4. Sonuçların yüklenmesini bekle (max 30 saniye)
+5. Snapshot alarak sonuçları oku — tespit edilen schema türleri, hatalar ve uyarılar
+6. Rapor klasörüne `dogrulama-raporu.md` dosyası oluştur
+
+Bu adım sadece `validate` flag'i verildiğinde çalışır. Schema'ların sayfaya zaten eklenmiş olması gerekir — henüz eklenmemişse kullanıcıya bildir.

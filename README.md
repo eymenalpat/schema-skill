@@ -28,11 +28,12 @@ Setup scripti şunları otomatik yapar:
 
 Repo klonlandıktan ve kurulum yapıldıktan sonra, herhangi bir projede şu komutları kullanabilirsiniz:
 
-### `/schema <url>`
-Tek URL için tüm uygun schema'ları üretir.
+### `/schema <url> [validate]`
+Tek URL için tüm uygun schema'ları üretir. `validate` eklenirse Google Rich Results Test ile doğrulama yapar.
 
 ```
 /schema https://www.example.com
+/schema https://www.example.com validate
 ```
 
 Çıktı:
@@ -50,11 +51,12 @@ example.com/
     └── website-detay.md
 ```
 
-### `/schema-bulk <csv>`
-CSV dosyasından toplu schema üretimi yapar.
+### `/schema-bulk <csv> [validate]`
+CSV dosyasından toplu schema üretimi yapar. `validate` eklenirse tüm URL'ler için Google Rich Results Test doğrulaması yapar.
 
 ```
 /schema-bulk urls.csv
+/schema-bulk urls.csv validate
 ```
 
 CSV şablonu `templates/bulk-template.csv` içinde:

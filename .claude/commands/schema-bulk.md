@@ -2,7 +2,12 @@
 description: "CSV dosyasından toplu schema üretimi"
 ---
 
-$ARGUMENTS CSV dosya yolu olarak kullanılacak.
+$ARGUMENTS CSV dosya yolu ve opsiyonel `validate` flag'i olarak kullanılacak.
+
+Argüman parse:
+- `$ARGUMENTS` = `urls.csv` → CSV yolu: `urls.csv`, doğrulama: **kapalı**
+- `$ARGUMENTS` = `urls.csv validate` → CSV yolu: `urls.csv`, doğrulama: **açık** (Playwright MCP ile Google Rich Results Test)
+- `$ARGUMENTS` = `urls.csv | validate` → Aynı şekilde doğrulama **açık** (pipe karakteri opsiyonel)
 
 ## Ön Kontrol
 Aracın dizini `$SKILL_DIR`.
@@ -89,7 +94,56 @@ Bir sayfa için birden fazla schema üretildiyse, ayrı dosyaların yanında `{s
 Bu dosya tek `<script type="application/ld+json">` tag'ı gerektiren CRM'ler içindir.
 
 ## Doğrulama ve Otomatik Düzeltme
-Her üretilen schema otomatik olarak doğrulanır. Hata varsa AI'a geri gönderilip düzeltilir (max 2 deneme). Çıktıda yalnızca doğrulanmış schemalar yer alır.
+Her üretilen schema otomatik olarak lokal doğrulanır (vocabulary + Google required properties). Hata varsa AI'a geri gönderilip düzeltilir (max 2 deneme). Çıktıda yalnızca doğrulanmış schemalar yer alır.
+
+## Playwright MCP ile Google Rich Results Test Doğrulaması (validate modu)
+Eğer kullanıcı `validate` flag'i verdiyse, TÜM schema üretimi tamamlandıktan sonra final aşamada her URL için Google Rich Results Test doğrulaması yap:
+
+### Doğrulama Adımları
+1. Tüm schema'lar üretilip dosyalara yazıldıktan sonra bu aşamaya geç
+2. Playwright MCP kullanarak her URL için şu adımları izle:
+   a. `mcp__playwright__browser_navigate` ile `https://search.google.com/test/rich-results` adresine git
+   b. `mcp__playwright__browser_snapshot` ile sayfanın yüklendiğini doğrula
+   c. URL giriş alanına test edilecek URL'yi yaz (`mcp__playwright__browser_fill_form` veya `mcp__playwright__browser_click` + `mcp__playwright__browser_type`)
+   d. "URL'yi test et" / "Test URL" butonuna tıkla
+   e. Sonuçların yüklenmesini bekle (`mcp__playwright__browser_wait_for` — max 30 saniye)
+   f. `mcp__playwright__browser_snapshot` ile sonuç sayfasını oku
+   g. Tespit edilen schema türleri, hata ve uyarıları parse et
+3. Her URL'nin doğrulama sonucunu kaydet
+
+### Doğrulama Raporu
+Eğer validate modu aktifse, rapor klasörüne ek bir `dogrulama-raporu.md` dosyası oluştur:
+
+```markdown
+# Google Rich Results Test Doğrulama Raporu
+
+## Özet
+- Toplam test edilen URL: X
+- Geçerli: Y
+- Hatalı: Z
+
+## Detaylı Sonuçlar
+
+### https://example.com
+- **Durum:** ✅ Geçerli / ❌ Hatalı
+- **Tespit edilen schema'lar:** Organization, WebSite
+- **Hatalar:** (varsa)
+- **Uyarılar:** (varsa)
+```
+
+### Rapor CSV'ye Ek Sütun
+Validate modunda rapor.csv'ye `Google Test` sütunu eklenir:
+```csv
+URL,Sayfa Türü,Schema Türü,Dosya Adı,Test Sonucu,Durum,Google Test,Notlar
+https://example.com,Ana Sayfa,Organization,homepage-organization.json,OK,Yeni,✅ Geçerli,
+```
+
+### Önemli Notlar
+- Bu adım sadece `validate` flag'i verildiğinde çalışır
+- Doğrulama, schema üretimi tamamlandıktan SONRA yapılır (üretimi yavaşlatmaz)
+- Google Rich Results Test URL tabanlı çalışır — yani schema'ların sayfaya zaten eklenmiş olması gerekir. Eğer schema henüz eklenmemişse, kullanıcıya bunu bildir ve "Code Snippet" test modunu kullanmayı öner
+- Her URL arası 3-5 saniye bekle (rate limit koruması)
+- Eğer Google Rich Results Test erişilemezse veya captcha çıkarsa, kullanıcıya bildir ve lokal doğrulama sonuçlarını kullan
 
 ## Rapor CSV
 ```csv
