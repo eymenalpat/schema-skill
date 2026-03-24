@@ -52,13 +52,17 @@ export function buildGeneratePrompt(
 Rules:
 - Analyze the page content thoroughly and determine ALL appropriate schema types
 - You are not limited to common types. Schema.org has 800+ types — use any that accurately represent the page content (e.g., MedicalCondition, FinancialProduct, LegalService, EducationalOrganization, SportsEvent, MusicEvent, RealEstateListing, Vehicle, etc.)
+- EVERY page MUST include a WebPage schema (with name, url, description, breadcrumb)
+- Organization and WebSite schemas should ONLY be added to the homepage and about page — do NOT add them to product pages, blog posts, category pages, FAQ pages, or other inner pages
 - Common combinations as a starting guide (but go beyond these when the content warrants it):
-  - Homepage: Organization + WebSite + SearchAction (+ LocalBusiness if applicable)
-  - Product pages: Product + Offer + BreadcrumbList
-  - Blog posts: BlogPosting/Article + BreadcrumbList
-  - Category pages: ItemList + BreadcrumbList
-  - FAQ pages: FAQPage + BreadcrumbList
-  - All inner pages: include BreadcrumbList
+  - Homepage: Organization + WebSite + SearchAction + WebPage + (LocalBusiness if applicable)
+  - About page: Organization + WebPage + BreadcrumbList
+  - Product pages: Product + Offer + WebPage + BreadcrumbList
+  - Blog posts: BlogPosting/Article + WebPage + BreadcrumbList
+  - Category pages: ItemList + WebPage + BreadcrumbList
+  - FAQ pages: FAQPage + WebPage + BreadcrumbList
+  - All other inner pages: WebPage + BreadcrumbList
+- IMPORTANT for ItemList on paginated pages: Only include items that are VISIBLE on the current page (page 1). Do NOT include items from subsequent paginated pages (page 2, 3, etc.). The numberOfItems should reflect only the items shown on the current page view.
 - Always analyze the actual page content to detect niche schema types beyond common ones
 - Refer to the "Available SEO Schema Types" section in the user message for the full list of types you can use
 - Return a JSON object with key "schemas" containing an array of JSON-LD objects

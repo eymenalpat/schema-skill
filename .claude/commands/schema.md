@@ -32,14 +32,18 @@ cd $SKILL_DIR && bash setup.sh
    - Mevcut ve SORUNSUZ schema varsa → tekrar üretme, sadece raporda "Mevcut — Geçerli" olarak göster
    - Mevcut ama HATALI schema varsa → düzeltilmiş versiyonunu üret, raporda "Mevcut — Düzeltildi" olarak göster
    - EKSİK schema varsa → yeni üret, raporda "Yeni" olarak göster
-4. Eksik schema'ları sayfa içeriğine göre belirle. Yaygın eşleştirmeler:
-   - Ana sayfa → Organization + WebSite + SearchAction + (varsa LocalBusiness)
-   - Ürün sayfası → Product + Offer + BreadcrumbList + Organization
-   - Blog yazısı → BlogPosting/Article + BreadcrumbList + Organization
-   - Kategori sayfası → ItemList + BreadcrumbList + Organization
-   - SSS sayfası → FAQPage + BreadcrumbList + Organization
-   - İletişim → ContactPage + Organization + LocalBusiness
-   - Tüm iç sayfalar → BreadcrumbList dahil et
+4. Eksik schema'ları sayfa içeriğine göre belirle. Kurallar:
+   - **WebPage** → TÜM sayfalara eklenmeli (name, url, description, breadcrumb)
+   - **Organization + WebSite** → SADECE ana sayfa ve hakkımızda sayfasına eklenmeli. Diğer sayfalara Organization/WebSite EKLEME.
+   - Ana sayfa → Organization + WebSite + SearchAction + WebPage + (varsa LocalBusiness)
+   - Hakkımızda → Organization + WebPage + BreadcrumbList
+   - Ürün sayfası → Product + Offer + WebPage + BreadcrumbList
+   - Blog yazısı → BlogPosting/Article + WebPage + BreadcrumbList
+   - Kategori sayfası → ItemList + WebPage + BreadcrumbList
+   - SSS sayfası → FAQPage + WebPage + BreadcrumbList
+   - İletişim → ContactPage + WebPage + BreadcrumbList + (varsa LocalBusiness)
+   - Tüm diğer iç sayfalar → WebPage + BreadcrumbList
+   - **ItemList kuralı:** Paginated sayfalarda SADECE mevcut sayfada (sayfa 1) görünen ürünleri listele. Sonraki sayfalardaki (sayfa 2, 3...) ürünleri DAHİL ETME. numberOfItems sadece görünen ürün sayısını yansıtmalı.
    - Bunların ötesinde: sayfa içeriğini analiz et ve schema.org'daki 800+ tipten uygun olanları kullan (ör: MedicalCondition, FinancialProduct, LegalService, EducationalOrganization, SportsEvent, RealEstateListing, Vehicle, Restaurant, MusicEvent, SoftwareApplication, Course, JobPosting vb.)
 5. Her schema'yı Google Rich Results Test standartlarına göre doğrula
 5. Çıktıyı aşağıdaki yapıya göre organize et

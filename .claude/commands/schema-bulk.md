@@ -50,13 +50,18 @@ Sütun boş bırakılırsa veya `auto` yazılırsa aynı davranır: otomatik alg
       - EKSİK → yeni üret, raporda "Yeni" göster
 
 ### Otomatik Schema Eşleştirme (auto modu)
-- Ana sayfa → Organization + WebSite + SearchAction + (varsa LocalBusiness)
-- Ürün sayfası → Product + Offer + BreadcrumbList + Organization
-- Blog yazısı → BlogPosting/Article + BreadcrumbList + Organization
-- Kategori sayfası → ItemList + BreadcrumbList + Organization
-- SSS sayfası → FAQPage + BreadcrumbList + Organization
-- İletişim → ContactPage + Organization + LocalBusiness
-- Tüm iç sayfalar → BreadcrumbList dahil et
+Kurallar:
+- **WebPage** → TÜM sayfalara eklenmeli
+- **Organization + WebSite** → SADECE ana sayfa ve hakkımızda sayfasına. Diğer sayfalara EKLEME.
+- Ana sayfa → Organization + WebSite + SearchAction + WebPage + (varsa LocalBusiness)
+- Hakkımızda → Organization + WebPage + BreadcrumbList
+- Ürün sayfası → Product + Offer + WebPage + BreadcrumbList
+- Blog yazısı → BlogPosting/Article + WebPage + BreadcrumbList
+- Kategori sayfası → ItemList + WebPage + BreadcrumbList
+- SSS sayfası → FAQPage + WebPage + BreadcrumbList
+- İletişim → ContactPage + WebPage + BreadcrumbList + (varsa LocalBusiness)
+- Tüm diğer iç sayfalar → WebPage + BreadcrumbList
+- **ItemList kuralı:** Paginated sayfalarda SADECE mevcut sayfada görünen ürünleri listele. Sonraki sayfalardaki ürünleri DAHİL ETME.
 3. Tüm sonuçları domain bazlı organize et
 4. Toplu rapor ve doküman oluştur
 
