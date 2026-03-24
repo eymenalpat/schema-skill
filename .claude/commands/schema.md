@@ -124,14 +124,20 @@ Ana doküman. Aşağıdaki yapıda yaz (müşteri firmanın adını ve domain'in
 - Hangi alanlar DİNAMİK (sayfaya göre değişen), hangileri STATİK (sabit)
 - Örnek JSON-LD (DİNAMİK ve STATİK alanlar `// DİNAMİK:` ve `// STATİK:` yorumlarıyla açıklanmış — bu sadece dokümantasyon içindir, gerçek schema dosyasında yorum olmaz)
 
-## Playwright MCP ile Google Rich Results Test Doğrulaması (validate modu)
-Eğer kullanıcı `validate` flag'i verdiyse, schema üretimi tamamlandıktan sonra Google Rich Results Test doğrulaması yap:
+## Playwright MCP ile Harici Doğrulama (validate modu)
+Eğer kullanıcı `validate` flag'i verdiyse, schema üretimi tamamlandıktan sonra iki aşamalı harici doğrulama yap:
 
-1. Playwright MCP kullanarak `https://search.google.com/test/rich-results` adresine git
-2. URL giriş alanına test edilecek URL'yi yaz
-3. "URL'yi test et" / "Test URL" butonuna tıkla
-4. Sonuçların yüklenmesini bekle (max 30 saniye)
-5. Snapshot alarak sonuçları oku — tespit edilen schema türleri, hatalar ve uyarılar
-6. Rapor klasörüne `dogrulama-raporu.md` dosyası oluştur
+### Aşama 1: Schema.org Validator
+1. `mcp__playwright__browser_navigate` ile `https://validator.schema.org/` adresine git
+2. "Fetch URL" sekmesine tıkla, URL'yi gir, "Run" butonuna bas
+3. Sonuçları oku — schema.org spesifikasyonuna uygunluk (property doğruluğu, değer tipleri, yapısal hatalar)
+
+### Aşama 2: Google Rich Results Test
+1. `mcp__playwright__browser_navigate` ile `https://search.google.com/test/rich-results` adresine git
+2. URL'yi gir, "Test URL" butonuna bas
+3. Sonuçları oku — Google zengin sonuç uygunluğu (desteklenen zengin sonuçlar, zorunlu alanlar)
+
+### Çıktı
+Rapor klasörüne `dogrulama-raporu.md` oluştur. İki aracın sonuçları ayrı ayrı raporlanır.
 
 Bu adım sadece `validate` flag'i verildiğinde çalışır. Schema'ların sayfaya zaten eklenmiş olması gerekir — henüz eklenmemişse kullanıcıya bildir.

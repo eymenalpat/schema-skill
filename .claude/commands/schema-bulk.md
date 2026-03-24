@@ -96,54 +96,86 @@ Bu dosya tek `<script type="application/ld+json">` tag'ı gerektiren CRM'ler iç
 ## Doğrulama ve Otomatik Düzeltme
 Her üretilen schema otomatik olarak lokal doğrulanır (vocabulary + Google required properties). Hata varsa AI'a geri gönderilip düzeltilir (max 2 deneme). Çıktıda yalnızca doğrulanmış schemalar yer alır.
 
-## Playwright MCP ile Google Rich Results Test Doğrulaması (validate modu)
-Eğer kullanıcı `validate` flag'i verdiyse, TÜM schema üretimi tamamlandıktan sonra final aşamada her URL için Google Rich Results Test doğrulaması yap:
+## Playwright MCP ile Harici Doğrulama (validate modu)
+Eğer kullanıcı `validate` flag'i verdiyse, TÜM schema üretimi tamamlandıktan sonra final aşamada her URL için iki aşamalı harici doğrulama yap:
 
-### Doğrulama Adımları
-1. Tüm schema'lar üretilip dosyalara yazıldıktan sonra bu aşamaya geç
-2. Playwright MCP kullanarak her URL için şu adımları izle:
-   a. `mcp__playwright__browser_navigate` ile `https://search.google.com/test/rich-results` adresine git
-   b. `mcp__playwright__browser_snapshot` ile sayfanın yüklendiğini doğrula
-   c. URL giriş alanına test edilecek URL'yi yaz (`mcp__playwright__browser_fill_form` veya `mcp__playwright__browser_click` + `mcp__playwright__browser_type`)
-   d. "URL'yi test et" / "Test URL" butonuna tıkla
-   e. Sonuçların yüklenmesini bekle (`mcp__playwright__browser_wait_for` — max 30 saniye)
-   f. `mcp__playwright__browser_snapshot` ile sonuç sayfasını oku
-   g. Tespit edilen schema türleri, hata ve uyarıları parse et
-3. Her URL'nin doğrulama sonucunu kaydet
+### Aşama 1: Schema.org Validator (validator.schema.org)
+Her URL için önce Schema.org Validator ile yapısal doğrulama yap:
+
+1. `mcp__playwright__browser_navigate` ile `https://validator.schema.org/` adresine git
+2. "Fetch URL" sekmesine tıkla
+3. URL giriş alanına test edilecek URL'yi yaz
+4. "Run" butonuna tıkla
+5. Sonuçların yüklenmesini bekle (max 30 saniye)
+6. `mcp__playwright__browser_snapshot` ile sonuç sayfasını oku
+7. Tespit edilen schema türleri, yapısal hatalar ve uyarıları parse et
+
+Bu aşama schema'nın **schema.org spesifikasyonuna** uygunluğunu kontrol eder:
+- Geçerli @type kullanımı
+- Property isimlerinin doğruluğu
+- Değer tiplerinin uygunluğu
+- İç içe yapıların doğruluğu
+
+### Aşama 2: Google Rich Results Test (search.google.com/test/rich-results)
+Schema.org Validator'dan sonra Google Rich Results Test ile zengin sonuç uygunluğunu kontrol et:
+
+1. `mcp__playwright__browser_navigate` ile `https://search.google.com/test/rich-results` adresine git
+2. `mcp__playwright__browser_snapshot` ile sayfanın yüklendiğini doğrula
+3. URL giriş alanına test edilecek URL'yi yaz
+4. "URL'yi test et" / "Test URL" butonuna tıkla
+5. Sonuçların yüklenmesini bekle (max 30 saniye)
+6. `mcp__playwright__browser_snapshot` ile sonuç sayfasını oku
+7. Zengin sonuç uygunluğu, hata ve uyarıları parse et
+
+Bu aşama schema'nın **Google zengin sonuçlarına** uygunluğunu kontrol eder:
+- Hangi zengin sonuç türleri destekleniyor
+- Zorunlu alanlar eksik mi
+- Google'a özel kurallar karşılanıyor mu
+
+### Doğrulama Sırası
+Her URL için sıra: **Schema.org Validator → Google Rich Results Test**
+Her URL arası 3-5 saniye bekle (rate limit koruması).
 
 ### Doğrulama Raporu
-Eğer validate modu aktifse, rapor klasörüne ek bir `dogrulama-raporu.md` dosyası oluştur:
+Validate modu aktifse, rapor klasörüne `dogrulama-raporu.md` oluştur:
 
 ```markdown
-# Google Rich Results Test Doğrulama Raporu
+# Schema Doğrulama Raporu
 
 ## Özet
 - Toplam test edilen URL: X
-- Geçerli: Y
-- Hatalı: Z
+- Schema.org Validator — Geçerli: Y / Hatalı: Z
+- Google Rich Results — Geçerli: Y / Hatalı: Z
 
 ## Detaylı Sonuçlar
 
 ### https://example.com
+
+#### Schema.org Validator
 - **Durum:** ✅ Geçerli / ❌ Hatalı
 - **Tespit edilen schema'lar:** Organization, WebSite
 - **Hatalar:** (varsa)
 - **Uyarılar:** (varsa)
+
+#### Google Rich Results Test
+- **Durum:** ✅ Geçerli / ❌ Hatalı
+- **Desteklenen zengin sonuçlar:** Sitelinks Search Box, Logo
+- **Hatalar:** (varsa)
+- **Uyarılar:** (varsa)
 ```
 
-### Rapor CSV'ye Ek Sütun
-Validate modunda rapor.csv'ye `Google Test` sütunu eklenir:
+### Rapor CSV'ye Ek Sütunlar
+Validate modunda rapor.csv'ye iki ek sütun eklenir:
 ```csv
-URL,Sayfa Türü,Schema Türü,Dosya Adı,Test Sonucu,Durum,Google Test,Notlar
-https://example.com,Ana Sayfa,Organization,homepage-organization.json,OK,Yeni,✅ Geçerli,
+URL,Sayfa Türü,Schema Türü,Dosya Adı,Test Sonucu,Durum,Schema.org Validator,Google Rich Results,Notlar
+https://example.com,Ana Sayfa,Organization,homepage-organization.json,OK,Yeni,✅ Geçerli,✅ Geçerli,
 ```
 
 ### Önemli Notlar
 - Bu adım sadece `validate` flag'i verildiğinde çalışır
 - Doğrulama, schema üretimi tamamlandıktan SONRA yapılır (üretimi yavaşlatmaz)
-- Google Rich Results Test URL tabanlı çalışır — yani schema'ların sayfaya zaten eklenmiş olması gerekir. Eğer schema henüz eklenmemişse, kullanıcıya bunu bildir ve "Code Snippet" test modunu kullanmayı öner
-- Her URL arası 3-5 saniye bekle (rate limit koruması)
-- Eğer Google Rich Results Test erişilemezse veya captcha çıkarsa, kullanıcıya bildir ve lokal doğrulama sonuçlarını kullan
+- Her iki test de URL tabanlı çalışır — schema'ların sayfaya zaten eklenmiş olması gerekir. Henüz eklenmemişse kullanıcıya bildir
+- Eğer herhangi bir test aracı erişilemezse veya captcha çıkarsa, kullanıcıya bildir ve diğer aracın sonuçlarını kullan
 
 ## Rapor CSV
 ```csv
