@@ -5,7 +5,14 @@ description: "Mevcut schema markup'ları denetle ve eksikleri raporla"
 $ARGUMENTS URL veya CSV dosya yolu olarak kullanılacak.
 
 ## Ön Kontrol
-schemaSkill aracının dizini `$SKILL_DIR`. Eğer `$SKILL_DIR/node_modules` yoksa:
+Aracın dizini `$SKILL_DIR`.
+
+1. Güncelleme kontrolü yap:
+```bash
+cd $SKILL_DIR && bash update-check.sh
+```
+
+2. Eğer `$SKILL_DIR/node_modules` yoksa ilk kurulumu yap:
 ```bash
 cd $SKILL_DIR && bash setup.sh
 ```

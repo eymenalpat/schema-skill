@@ -5,7 +5,14 @@ description: "Tek URL için tüm uygun Schema.org JSON-LD markup'larını üret"
 $ARGUMENTS URL olarak kullanılacak.
 
 ## Ön Kontrol
-Önce schemaSkill aracının kurulu olup olmadığını kontrol et. Aracın dizini `$SKILL_DIR` (bu komut dosyasının bulunduğu repo kök dizini). Eğer `$SKILL_DIR/node_modules` yoksa:
+Aracın dizini `$SKILL_DIR` (bu komut dosyasının bulunduğu repo kök dizini).
+
+1. Güncelleme kontrolü yap:
+```bash
+cd $SKILL_DIR && bash update-check.sh
+```
+
+2. Eğer `$SKILL_DIR/node_modules` yoksa ilk kurulumu yap:
 ```bash
 cd $SKILL_DIR && bash setup.sh
 ```
