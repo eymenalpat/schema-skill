@@ -61,10 +61,12 @@ CSV şablonu `templates/bulk-template.csv` içinde:
 
 | url | page_type | schemas | priority | notes |
 |-----|-----------|---------|----------|-------|
-| https://example.com | homepage | Organization,WebSite | high | Ana sayfa |
-| https://example.com/products/item | product | Product,Offer,BreadcrumbList | high | Ürün |
-| https://example.com/blog/post | blog | BlogPosting,BreadcrumbList | medium | Blog |
-| https://example.com/faq | faq | FAQPage,BreadcrumbList | medium | SSS |
+| https://example.com | auto | auto | high | Otomatik algıla |
+| https://example.com/products/item | product | Product,Offer,BreadcrumbList | high | Spesifik schema |
+| https://example.com/blog/post | auto | auto | medium | Otomatik algıla |
+| https://example.com/faq | auto | auto | medium | Otomatik algıla |
+
+`page_type` ve `schemas` sütunlarına `auto` yazıldığında (veya boş bırakıldığında) sayfa taranarak tip ve schema türleri otomatik belirlenir.
 
 ### `/schema-audit <url|csv>`
 Mevcut schema markup'ları denetler, eksikleri tespit eder, puan verir.
@@ -142,7 +144,7 @@ https://example.com/faq,SSS,FAQPage,faq-faqpage.json,NOK,mainEntity eksik
 
 ## Desteklenen Schema Tipleri
 
-Araç 800+ schema.org tipini dinamik olarak destekler. Özellikle optimize edilmiş tipler:
+Araç schema.org vocabulary'sini dinamik olarak indirir (800+ tip). AI sayfa içeriğini analiz ederek niş tipleri de algılar. Özellikle optimize edilmiş ve sık kullanılan tipler:
 
 | Tip | Kullanım Alanı |
 |-----|----------------|

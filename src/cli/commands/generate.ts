@@ -59,10 +59,44 @@ export function registerGenerateCommand(program: Command): void {
           }
 
           spinner.update('Preparing vocabulary context...');
-          const recommendedProps = await vocabManager.getRecommendedProperties(finalType);
-          const vocabularyInfo = recommendedProps
-            .map((p) => `- ${p.name}: ${p.description} (expected types: ${p.rangeTypes.join(', ')})`)
-            .join('\n');
+          // Gather vocabulary for the detected type AND commonly paired types
+          const typesToInclude = new Set<string>([finalType]);
+          // Add related types based on page context
+          const relatedTypeMap: Record<string, string[]> = {
+            Product: ['Offer', 'AggregateRating', 'Review', 'BreadcrumbList', 'Organization'],
+            Article: ['BreadcrumbList', 'Organization', 'Person'],
+            BlogPosting: ['BreadcrumbList', 'Organization', 'Person'],
+            NewsArticle: ['BreadcrumbList', 'Organization', 'Person'],
+            FAQPage: ['Question', 'Answer', 'BreadcrumbList', 'Organization'],
+            Event: ['Offer', 'Place', 'Organization', 'BreadcrumbList'],
+            Recipe: ['AggregateRating', 'Review', 'BreadcrumbList', 'Organization'],
+            LocalBusiness: ['Organization', 'PostalAddress', 'GeoCoordinates'],
+            WebPage: ['Organization', 'WebSite', 'BreadcrumbList'],
+            HowTo: ['HowToStep', 'BreadcrumbList', 'Organization'],
+            JobPosting: ['Organization', 'Place', 'BreadcrumbList'],
+            Course: ['Organization', 'Offer', 'BreadcrumbList'],
+            CollectionPage: ['ItemList', 'BreadcrumbList', 'Organization'],
+          };
+          const related = relatedTypeMap[finalType];
+          if (related) {
+            for (const t of related) typesToInclude.add(t);
+          }
+          // Always include these universal types
+          typesToInclude.add('Organization');
+          typesToInclude.add('WebSite');
+          typesToInclude.add('BreadcrumbList');
+
+          const vocabParts: string[] = [];
+          for (const typeName of typesToInclude) {
+            const props = await vocabManager.getRecommendedProperties(typeName);
+            if (props.length > 0) {
+              vocabParts.push(
+                `### ${typeName}\n` +
+                props.map((p) => `- ${p.name}: ${p.description} (expected types: ${p.rangeTypes.join(', ')})`).join('\n')
+              );
+            }
+          }
+          const vocabularyInfo = vocabParts.join('\n\n');
 
           // Generate schemas WITH built-in validation + auto-fix
           spinner.update('Generating schemas with AI (with auto-validation)...');

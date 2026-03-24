@@ -15,10 +15,12 @@ Eğer kullanıcı CSV belirtmediyse, `$SKILL_DIR/templates/bulk-template.csv` ş
 
 Beklenen sütunlar:
 - **url** (zorunlu): Sayfa URL'si
-- **page_type** (opsiyonel): homepage, product, blog, category, faq, contact, about
-- **schemas** (opsiyonel): Üretilecek schema türleri (virgülle ayrılmış)
+- **page_type** (opsiyonel): homepage, product, blog, category, faq, contact, about — veya `auto` (sayfa taranarak otomatik algılanır)
+- **schemas** (opsiyonel): Üretilecek schema türleri (virgülle ayrılmış) — veya `auto` (sayfa tipine göre otomatik belirlenir)
 - **priority** (opsiyonel): high / medium / low
 - **notes** (opsiyonel): Notlar
+
+Sütun boş bırakılırsa veya `auto` yazılırsa aynı davranır: otomatik algılama devreye girer.
 
 ## Görev
 1. CSV dosyasını oku
@@ -27,8 +29,22 @@ Beklenen sütunlar:
       ```bash
       cd $SKILL_DIR && npx tsx bin/schemaSkill.ts generate "<url>"
       ```
-   b. CSV'deki `schemas` sütunu varsa o türleri üret, yoksa sayfa tipine göre otomatik belirle
-   c. Sayfaya uygun TÜM schema'ları üret (tek değil, birden fazla)
+   b. `page_type` sütunu `auto` veya boşsa: sayfa içeriğini analiz ederek tipi otomatik algıla
+   c. `schemas` sütunu `auto` veya boşsa: algılanan sayfa tipine göre uygun schema türlerini otomatik belirle (aşağıdaki eşleştirme tablosuna göre)
+   d. `schemas` sütununda spesifik türler varsa sadece onları üret
+   e. Sayfada zaten mevcut olan schema'ları kontrol et:
+      - Mevcut ve SORUNSUZ → tekrar üretme, raporda "Mevcut — Geçerli" göster
+      - Mevcut ama HATALI → düzeltilmiş versiyon üret, raporda "Mevcut — Düzeltildi" göster
+      - EKSİK → yeni üret, raporda "Yeni" göster
+
+### Otomatik Schema Eşleştirme (auto modu)
+- Ana sayfa → Organization + WebSite + SearchAction + (varsa LocalBusiness)
+- Ürün sayfası → Product + Offer + BreadcrumbList + Organization
+- Blog yazısı → BlogPosting/Article + BreadcrumbList + Organization
+- Kategori sayfası → ItemList + BreadcrumbList + Organization
+- SSS sayfası → FAQPage + BreadcrumbList + Organization
+- İletişim → ContactPage + Organization + LocalBusiness
+- Tüm iç sayfalar → BreadcrumbList dahil et
 3. Tüm sonuçları domain bazlı organize et
 4. Toplu rapor ve doküman oluştur
 

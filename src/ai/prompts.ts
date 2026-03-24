@@ -1,4 +1,5 @@
 import type { PageContent, ExistingSchema } from '../types/crawl.js';
+import { formatSeoSchemaTypesForPrompt } from '../schema/seoSchemaTypes.js';
 
 export interface PromptMessage {
   role: 'system' | 'user';
@@ -49,20 +50,25 @@ export function buildGeneratePrompt(
     content: `You are a Schema.org structured data expert. Your task is to generate valid JSON-LD markup for web pages.
 
 Rules:
-- Analyze the page and determine ALL appropriate schema types for the page
-- For a homepage: Organization + WebSite + SearchAction (+ LocalBusiness if applicable)
-- For product pages: Product + Offer + BreadcrumbList
-- For blog posts: BlogPosting/Article + BreadcrumbList
-- For category pages: ItemList + BreadcrumbList
-- For FAQ pages: FAQPage + BreadcrumbList
-- For all inner pages: include BreadcrumbList
+- Analyze the page content thoroughly and determine ALL appropriate schema types
+- You are not limited to common types. Schema.org has 800+ types — use any that accurately represent the page content (e.g., MedicalCondition, FinancialProduct, LegalService, EducationalOrganization, SportsEvent, MusicEvent, RealEstateListing, Vehicle, etc.)
+- Common combinations as a starting guide (but go beyond these when the content warrants it):
+  - Homepage: Organization + WebSite + SearchAction (+ LocalBusiness if applicable)
+  - Product pages: Product + Offer + BreadcrumbList
+  - Blog posts: BlogPosting/Article + BreadcrumbList
+  - Category pages: ItemList + BreadcrumbList
+  - FAQ pages: FAQPage + BreadcrumbList
+  - All inner pages: include BreadcrumbList
+- Always analyze the actual page content to detect niche schema types beyond common ones
+- Refer to the "Available SEO Schema Types" section in the user message for the full list of types you can use
 - Return a JSON object with key "schemas" containing an array of JSON-LD objects
 - Each schema in the array must be a complete, valid JSON-LD object with "@context": "https://schema.org" and "@type"
 - Use ONLY properties from the provided vocabulary information below
 - Follow Google's structured data guidelines strictly
 - Populate properties using actual data extracted from the page content
 - Use appropriate nested types where relevant (e.g., Organization for publisher, ImageObject for images)
-- If existing schemas are present, improve upon them rather than duplicating
+- IMPORTANT: Check the "Existing Schemas on the Page" section carefully. If a schema type already exists on the page AND is valid, do NOT regenerate it — skip that type entirely. Only generate schemas for types that are MISSING from the page.
+- If an existing schema has errors or is incomplete, include a corrected version of it in your output.
 - Return ONLY the JSON object as valid JSON. No explanation, no markdown, no code fences.
 
 Example response format:
@@ -78,6 +84,8 @@ Example response format:
   const existingSchemasFormatted = formatExistingSchemas(existingSchemas);
   const bodyTextTruncated = truncateText(pageContent.bodyText, 3000);
 
+  const seoSchemaTypes = formatSeoSchemaTypesForPrompt();
+
   const userMessage: PromptMessage = {
     role: 'user',
     content: `Generate a JSON-LD structured data markup for the following page.
@@ -89,6 +97,9 @@ Example response format:
 **Language:** ${pageContent.language ?? 'N/A'}
 
 **Detected Page Type:** ${detectedType}
+
+**Available SEO Schema Types (pick all that apply to this page):**
+${seoSchemaTypes}
 
 **Available Schema.org Properties for ${detectedType}:**
 ${vocabularyInfo}
@@ -108,7 +119,9 @@ ${pageContent.images.slice(0, 10).map((img) => `- src: ${img.src}, alt: ${img.al
 **Page Content (truncated):**
 ${bodyTextTruncated}
 
-Generate all appropriate JSON-LD schemas for this page. The primary detected type is "${detectedType}", but include all other relevant schema types as well.`,
+Generate JSON-LD schemas for this page. The primary detected type is "${detectedType}", but include all other relevant schema types as well.
+
+IMPORTANT: Do NOT regenerate schema types that already exist on the page and are valid. Only generate MISSING schema types. If an existing schema has errors, return a corrected version.`,
   };
 
   return [systemMessage, userMessage];

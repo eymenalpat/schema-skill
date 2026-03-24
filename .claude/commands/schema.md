@@ -16,7 +16,11 @@ cd $SKILL_DIR && bash setup.sh
    cd $SKILL_DIR && npx tsx bin/schemaSkill.ts generate "$ARGUMENTS"
    ```
 2. CLI çıktısındaki JSON-LD'leri al. Araç artık birden fazla schema üretir.
-3. Eğer CLI yeterli schema üretmediyse, sayfa tipine göre eksik olanları da üret:
+3. Sayfada zaten mevcut olan schema'ları kontrol et:
+   - Mevcut ve SORUNSUZ schema varsa → tekrar üretme, sadece raporda "Mevcut — Geçerli" olarak göster
+   - Mevcut ama HATALI schema varsa → düzeltilmiş versiyonunu üret, raporda "Mevcut — Düzeltildi" olarak göster
+   - EKSİK schema varsa → yeni üret, raporda "Yeni" olarak göster
+4. Eksik schema'ları sayfa içeriğine göre belirle. Yaygın eşleştirmeler:
    - Ana sayfa → Organization + WebSite + SearchAction + (varsa LocalBusiness)
    - Ürün sayfası → Product + Offer + BreadcrumbList + Organization
    - Blog yazısı → BlogPosting/Article + BreadcrumbList + Organization
@@ -24,7 +28,8 @@ cd $SKILL_DIR && bash setup.sh
    - SSS sayfası → FAQPage + BreadcrumbList + Organization
    - İletişim → ContactPage + Organization + LocalBusiness
    - Tüm iç sayfalar → BreadcrumbList dahil et
-4. Her schema'yı Google Rich Results Test standartlarına göre doğrula
+   - Bunların ötesinde: sayfa içeriğini analiz et ve schema.org'daki 800+ tipten uygun olanları kullan (ör: MedicalCondition, FinancialProduct, LegalService, EducationalOrganization, SportsEvent, RealEstateListing, Vehicle, Restaurant, MusicEvent, SoftwareApplication, Course, JobPosting vb.)
+5. Her schema'yı Google Rich Results Test standartlarına göre doğrula
 5. Çıktıyı aşağıdaki yapıya göre organize et
 
 ## Çıktı Yapısı
@@ -76,6 +81,18 @@ https://example.com,Ana Sayfa,Organization,homepage-organization.json,OK,
 https://example.com,Ana Sayfa,WebSite,homepage-website.json,OK,
 ```
 Test Sonucu: `OK` (geçerli JSON-LD + gerekli alanlar mevcut) veya `NOK` (hata açıklaması)
+
+## Mevcut Schema Durumu
+Rapor CSV'sinde ek bir `Durum` sütunu olmalı:
+```csv
+URL,Sayfa Türü,Schema Türü,Dosya Adı,Test Sonucu,Durum,Notlar
+https://example.com,Ana Sayfa,BreadcrumbList,,OK,Mevcut — Geçerli,Sayfada zaten var
+https://example.com,Ana Sayfa,Organization,homepage-organization.json,OK,Yeni,Eksikti — üretildi
+```
+Durum değerleri:
+- `Mevcut — Geçerli`: Sayfada var ve sorunsuz, dosya üretilmedi
+- `Mevcut — Düzeltildi`: Sayfada var ama hatalıydı, düzeltilmiş versiyon üretildi
+- `Yeni`: Sayfada yoktu, sıfırdan üretildi
 
 ## Doküman Üretim Kuralları
 docs/ klasöründe müşteriye gönderilecek Türkçe dokümantasyon üret:
